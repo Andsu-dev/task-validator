@@ -1,0 +1,38 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.env
+.env.*
+*.local
+coverage/
+logs/
+*.log
+*.tsbuildinfo
+
+# VSCode
+.vscode/
+
+# env
+.env
+
+
+# MacOS
+.DS_Store
+
+# Testes
+*.test.js
+*.test.ts
+
+# Outros
+.idea/
+*.swp
+*.swo
+# Arquivos de lock alternativos
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

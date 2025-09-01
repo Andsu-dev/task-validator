@@ -11,8 +11,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "cli": "tsx src/cli-simple.ts",
-    "cli:build": "tsc && node dist/cli-simple.js",
+    "cli": "tsx src/cli.ts",
+    "cli:build": "tsc && node dist/cli.js",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts"

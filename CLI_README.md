@@ -25,7 +25,17 @@ npx task-validator --help
 
 ## 🎯 Uso Básico
 
-### 1. Criar arquivo de regras
+### 1. Configurar API Key (Primeira vez)
+
+```bash
+# Configurar sua chave da API (obrigatório)
+task-validator config --api-key "sua-chave-aqui"
+
+# Verificar se foi salva
+task-validator config --show
+```
+
+### 2. Criar arquivo de regras
 
 ```bash
 # Criar arquivo de exemplo
@@ -35,7 +45,7 @@ task-validator init
 task-validator init --output minhas-regras.json
 ```
 
-### 2. Editar as regras
+### 3. Editar as regras
 
 Edite o arquivo `task-rules.json` criado com suas regras específicas:
 
@@ -56,60 +66,103 @@ Edite o arquivo `task-rules.json` criado com suas regras específicas:
 }
 ```
 
-### 3. Executar validação
+### 4. Executar validação
 
 ```bash
-# Validação básica
+# Validação básica (usa configuração global)
 task-validator validate
 
 # Com opções personalizadas
 task-validator validate \
   --rules minhas-regras.json \
   --base-branch develop \
-  --output relatorios \
-  --api-key sua-chave-api
+  --output relatorios
 ```
 
 ## ⚙️ Configuração
 
-### Variável de Ambiente
+### Configuração Global (Recomendado)
 
-Configure sua chave da API:
+O CLI salva a configuração globalmente em `~/.task-validator/config.json`:
+
+```bash
+# Configurar API key (obrigatório)
+task-validator config --api-key "sua-chave-aqui"
+
+# Ver configuração atual
+task-validator config --show
+
+# Configurar valores padrão
+task-validator config --default-branch develop --output-dir meus-relatorios
+```
+
+### Prioridade de Configuração
+
+O CLI usa a seguinte prioridade para configurações:
+
+1. **Linha de comando** (maior prioridade)
+2. **Configuração global** (`~/.task-validator/config.json`)
+3. **Variável de ambiente** (`GOOGLE_AI_API_KEY`)
+4. **Valores padrão** (menor prioridade)
+
+### Variável de Ambiente (Alternativo)
+
+Configure sua chave da API via variável de ambiente:
 
 ```bash
 export GOOGLE_AI_API_KEY="sua-chave-aqui"
 ```
 
-### Arquivo de Configuração
+### Arquivo de Configuração Local (Deprecated)
 
-Crie um arquivo `.task-validator.json` no seu projeto:
+Para projetos específicos, você pode criar um arquivo `.task-validator.json`:
 
 ```json
 {
   "defaultBranch": "main",
   "outputDir": "reports",
-  "rulesFile": "task-rules.json",
-  "ignoreFiles": [
-    "node_modules/**",
-    "dist/**",
-    "*.log"
-  ],
-  "maxFileSize": 1048576,
-  "timeout": 300
+  "rulesFile": "task-rules.json"
 }
 ```
 
 ## 📊 Comandos Disponíveis
+
+### `config`
+
+Gerencia a configuração global do CLI.
+
+**Opções:**
+- `--api-key <key>`: Definir chave da API do Google AI
+- `--default-branch <branch>`: Definir branch padrão
+- `--output-dir <dir>`: Definir diretório de saída padrão
+- `--rules-file <file>`: Definir arquivo de regras padrão
+- `--show`: Mostrar configuração atual
+- `--clear`: Limpar configuração
+
+**Exemplos:**
+```bash
+# Configurar API key
+task-validator config --api-key "sua-chave-aqui"
+
+# Ver configuração atual
+task-validator config --show
+
+# Definir diretório de saída padrão
+task-validator config --output-dir "meus-relatorios"
+
+# Limpar configuração
+task-validator config --clear
+```
 
 ### `validate`
 
 Valida uma task baseada nas mudanças do Git.
 
 **Opções:**
-- `-r, --rules <file>`: Arquivo de regras (padrão: `task-rules.json`)
-- `-b, --base-branch <branch>`: Branch base (padrão: `main`)
-- `-o, --output <dir>`: Diretório de saída (padrão: `reports`)
-- `-k, --api-key <key>`: Chave da API do Google AI
+- `-r, --rules <file>`: Arquivo de regras (usa configuração padrão se não especificado)
+- `-b, --base-branch <branch>`: Branch base (usa configuração padrão se não especificado)
+- `-o, --output <dir>`: Diretório de saída (usa configuração padrão se não especificado)
+- `-k, --api-key <key>`: Chave da API do Google AI (usa configuração padrão se não especificado)
 - `--server <url>`: URL do servidor remoto (modo remoto)
 
 ### `init`

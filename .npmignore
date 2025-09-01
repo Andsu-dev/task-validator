@@ -1,0 +1,69 @@
+# Arquivos de desenvolvimento
+src/
+tsconfig.json
+.eslintrc.js
+.prettierrc
+jest.config.js
+
+# Arquivos de teste
+test/
+__tests__/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Arquivos de documentação
+docs/
+*.md
+!README.md
+
+# Arquivos de configuração
+.env
+.env.example
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos temporários
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Scripts de desenvolvimento
+scripts/install-global.sh
+
+# Exemplos (opcional - pode ser incluído)
+examples/
+
+# Relatórios de teste
+coverage/
+.nyc_output/
+
+# Arquivos de build antigos
+dist-old/
+build-old/

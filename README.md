@@ -135,7 +135,7 @@ npm run cli
 npm run cli:build
 
 # Testar validação
-npm run cli -- validate --rules examples/task-rules-example.json
+npm run cli -- validate --rules task-rules.json
 ```
 Verifica se o serviço está pronto (API key configurada).
 

@@ -6,7 +6,6 @@ import dotenv from 'dotenv';
 import { errorHandler } from '@/middleware/errorHandler';
 import { validationRoutes } from '@/routes/validation';
 import { logger } from './utils/logger';
-import { healthRoutes } from './routes/health';
 
 dotenv.config();
 
@@ -29,7 +28,6 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/api/health', healthRoutes);
 app.use('/api/validation', validationRoutes);
 
 // Error handling

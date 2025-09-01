@@ -1,0 +1,71 @@
+stages:
+  - validate
+
+task-validation:
+  stage: validate
+  image: node:18-alpine
+  before_script:
+    - npm install -g task-validator-agent
+  script:
+    # Criar arquivo de regras baseado no contexto do projeto
+    - |
+      cat > task-rules.json << 'EOF'
+      {
+        "taskId": "MR-$CI_MERGE_REQUEST_ID",
+        "title": "Merge Request Validation",
+        "description": "Validação automática das mudanças no MR",
+        "rules": [
+          {
+            "id": "QUALITY-001",
+            "category": "validation",
+            "description": "Código deve seguir padrões de qualidade",
+            "priority": "high",
+            "criteria": [
+              "funções bem documentadas",
+              "tratamento de erros adequado",
+              "nomes de variáveis descritivos"
+            ]
+          },
+          {
+            "id": "SECURITY-001",
+            "category": "security",
+            "description": "Verificar vulnerabilidades de segurança",
+            "priority": "high",
+            "criteria": [
+              "validação de entrada",
+              "sanitização de dados",
+              "proteção contra SQL injection"
+            ]
+          },
+          {
+            "id": "TEST-001",
+            "category": "validation",
+            "description": "Testes devem estar presentes",
+            "priority": "medium",
+            "criteria": [
+              "testes unitários",
+              "cobertura de código",
+              "testes de integração"
+            ]
+          }
+        ]
+      }
+      EOF
+    
+    # Executar validação
+    - |
+      task-validator validate \
+        --rules task-rules.json \
+        --base-branch $CI_DEFAULT_BRANCH \
+        --output validation-reports \
+        --api-key $GOOGLE_AI_API_KEY
+  artifacts:
+    paths:
+      - validation-reports/
+    reports:
+      junit: validation-reports/*.xml
+    expire_in: 30 days
+  only:
+    - merge_requests
+  variables:
+    GOOGLE_AI_API_KEY: $GOOGLE_AI_API_KEY

@@ -3,15 +3,14 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import inquirer from 'inquirer';
 import fs from 'fs-extra';
 import path from 'path';
+
+// Importações relativas para evitar problemas com @/
 import { TaskValidatorAgent } from './agents/TaskValidatorAgent.js';
 import { GitService } from './services/GitService.js';
 import { ValidationReportService } from './services/ValidationReportService.js';
-import { logger } from './utils/logger.js';
 import { AgentContext, TaskRules } from './types/index.js';
-import { ConfigManager } from './config/cli-config.js';
 
 const program = new Command();
 
@@ -87,21 +86,21 @@ program
       rules: [
         {
           id: "AUTH-001",
-          category: "Autenticação",
+          category: "api",
           description: "Implementar endpoint de login",
           priority: "high",
           criteria: ["POST /auth/login", "validação de credenciais", "retorno de token"]
         },
         {
           id: "AUTH-002", 
-          category: "Autenticação",
+          category: "api",
           description: "Implementar endpoint de registro",
           priority: "high",
           criteria: ["POST /auth/register", "validação de dados", "hash de senha"]
         },
         {
           id: "AUTH-003",
-          category: "Segurança",
+          category: "security",
           description: "Implementar middleware de autenticação",
           priority: "medium",
           criteria: ["middleware JWT", "proteção de rotas", "validação de token"]

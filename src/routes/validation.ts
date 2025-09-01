@@ -1,6 +1,8 @@
 // src/routes/validation.ts
 import { Router, Request, Response } from 'express';
 import { TaskValidatorAgent } from '@/agents/TaskValidatorAgent';
+import { GitService } from '@/services/GitService';
+import { ValidationReportService } from '@/services/ValidationReportService';
 import { logger } from '@/utils/logger';
 
 const router = Router();
@@ -8,7 +10,7 @@ const router = Router();
 // POST /api/validation/validate
 router.post('/validate', async (req: Request, res: Response) => {
   try {
-    const { rules, gitChanges, branchName, repositoryPath } = req.body;
+    const { rules, repositoryPath, baseBranch = 'main' } = req.body;
 
     if (!process.env.GOOGLE_API_KEY) {
       return res.status(500).json({
@@ -16,6 +18,11 @@ router.post('/validate', async (req: Request, res: Response) => {
         message: 'GOOGLE_API_KEY not configured'
       });
     }
+
+    // Obter alterações do Git
+    const gitService = new GitService(repositoryPath || process.cwd());
+    const gitChanges = await gitService.getChanges(baseBranch);
+    const branchName = await gitService.getCurrentBranch();
 
     const agent = new TaskValidatorAgent(process.env.GOOGLE_API_KEY);
     
@@ -26,9 +33,19 @@ router.post('/validate', async (req: Request, res: Response) => {
       repositoryPath: repositoryPath || process.cwd()
     });
 
+    // Gerar e salvar relatório
+    const reportService = new ValidationReportService();
+    const report = await reportService.generateReport(result);
+    const reportPath = await reportService.saveDetailedReport(result);
+
     res.json({
       success: true,
-      data: result
+      data: result,
+      report: {
+        summary: report.summary,
+        analysis: report.analysis,
+        reportPath: reportPath
+      }
     });
   } catch (error) {
     logger.error('Validation error', error);
@@ -43,7 +60,7 @@ router.post('/validate', async (req: Request, res: Response) => {
 // POST /api/validation/stream
 router.post('/stream', async (req: Request, res: Response) => {
   try {
-    const { rules, gitChanges, branchName, repositoryPath } = req.body;
+    const { rules, repositoryPath, baseBranch = 'main' } = req.body;
 
     if (!process.env.GOOGLE_API_KEY) {
       return res.status(500).json({
@@ -51,6 +68,11 @@ router.post('/stream', async (req: Request, res: Response) => {
         message: 'GOOGLE_API_KEY not configured'
       });
     }
+
+    // Obter alterações do Git
+    const gitService = new GitService(repositoryPath || process.cwd());
+    const gitChanges = await gitService.getChanges(baseBranch);
+    const branchName = await gitService.getCurrentBranch();
 
     const agent = new TaskValidatorAgent(process.env.GOOGLE_API_KEY);
     
@@ -76,6 +98,60 @@ router.post('/stream', async (req: Request, res: Response) => {
       error: error instanceof Error ? error.message : 'Unknown error' 
     })}\n\n`);
     res.end();
+  }
+});
+
+// POST /api/validation/report
+router.post('/report', async (req: Request, res: Response) => {
+  try {
+    const { rules, repositoryPath, baseBranch = 'main', reportType = 'detailed' } = req.body;
+
+    if (!process.env.GOOGLE_API_KEY) {
+      return res.status(500).json({
+        success: false,
+        message: 'GOOGLE_API_KEY not configured'
+      });
+    }
+
+    // Obter alterações do Git
+    const gitService = new GitService(repositoryPath || process.cwd());
+    const gitChanges = await gitService.getChanges(baseBranch);
+    const branchName = await gitService.getCurrentBranch();
+
+    const agent = new TaskValidatorAgent(process.env.GOOGLE_API_KEY);
+    
+    const result = await agent.validateTask({
+      rules,
+      gitChanges,
+      branchName,
+      repositoryPath: repositoryPath || process.cwd()
+    });
+
+    // Gerar relatório
+    const reportService = new ValidationReportService();
+    const report = await reportService.generateReport(result);
+    
+    let reportPath: string;
+    if (reportType === 'detailed') {
+      reportPath = await reportService.saveDetailedReport(result);
+    } else {
+      reportPath = await reportService.saveReport(report);
+    }
+
+    res.json({
+      success: true,
+      report: {
+        ...report,
+        reportPath: reportPath
+      }
+    });
+  } catch (error) {
+    logger.error('Report generation error', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating report',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 

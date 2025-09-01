@@ -1,30 +1,7 @@
-// src/services/ValidationReportService.ts
 import fs from 'fs-extra';
 import path from 'path';
-import { ValidationResult, BusinessRule } from '@/types';
+import { ValidationResult } from '@/types';
 import { logger } from '@/utils/logger';
-
-export interface ValidationReport {
-  taskId: string;
-  branchName: string;
-  timestamp: string;
-  summary: {
-    totalRules: number;
-    implementedCount: number;
-    missingCount: number;
-    highPriorityMissing: number;
-    completenessScore: number;
-    percentage: string;
-  };
-  implementedRules: BusinessRule[];
-  missingRules: BusinessRule[];
-  suggestions: string[];
-  analysis: {
-    strengths: string[];
-    weaknesses: string[];
-    nextSteps: string[];
-  };
-}
 
 export class ValidationReportService {
   private outputDir: string;
@@ -42,10 +19,10 @@ export class ValidationReportService {
     }
   }
 
-  async generateReport(validationResult: ValidationResult): Promise<ValidationReport> {
+  async generateReport(validationResult: ValidationResult): Promise<any> {
     const percentage = `${(validationResult.completenessScore * 100).toFixed(1)}%`;
     
-    const report: ValidationReport = {
+    const report = {
       taskId: validationResult.taskId,
       branchName: validationResult.branchName,
       timestamp: validationResult.timestamp.toISOString(),
@@ -119,7 +96,7 @@ export class ValidationReportService {
     return { strengths, weaknesses, nextSteps };
   }
 
-  async saveReport(report: ValidationReport, filename?: string): Promise<string> {
+  async saveReport(report: any, filename?: string): Promise<string> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const defaultFilename = `validation-report-${report.taskId}-${timestamp}.json`;
@@ -146,14 +123,12 @@ export class ValidationReportService {
       
       const filePath = path.join(this.outputDir, finalFilename);
       
-      // Relatório detalhado com informações adicionais
       const detailedReport = {
         ...report,
         metadata: {
           generatedAt: new Date().toISOString(),
           validatorVersion: '1.0.0',
-          totalFilesAnalyzed: validationResult.gitCommits.length,
-          validationDuration: 'N/A' // Poderia ser calculado se tivermos timestamps
+          validationDuration: 'N/A'
         },
         rulesBreakdown: {
           byPriority: {
@@ -185,7 +160,7 @@ export class ValidationReportService {
       logger.info(`Detailed validation report saved to: ${filePath}`);
       return filePath;
     } catch (error) {
-      logger.error('Error saving detailed validation report:', error);
+      logger.error("Error saving detailed validation report:", error);
       throw error;
     }
   }

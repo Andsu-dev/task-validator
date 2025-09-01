@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Script para instalação global do Task Validator CLI
-
 echo "🚀 Instalando Task Validator CLI globalmente..."
 
 # Verificar se o Node.js está instalado

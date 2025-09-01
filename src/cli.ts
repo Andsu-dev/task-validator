@@ -181,8 +181,9 @@ program
         return;
       }
 
-      // Modo local
-      await validateLocally(apiKey, rules, options, spinner, config);
+      spinner.fail('Validação local não implementada. Use o servidor API.');
+      console.log(chalk.yellow('💡 Execute o servidor com: npm start'));
+      console.log(chalk.yellow('💡 Use --server <url> para validação remota'));
       
     } catch (error) {
       console.error(chalk.red('Erro durante a validação:'), error);
@@ -205,23 +206,31 @@ program
           category: "api",
           description: "Implementar endpoint de login",
           priority: "high",
-          criteria: ["POST /auth/login", "validação de credenciais", "retorno de token"]
+          implemented: false,
+          confidence: 0,
+          evidence: ""
         },
         {
           id: "AUTH-002", 
           category: "api",
           description: "Implementar endpoint de registro",
           priority: "high",
-          criteria: ["POST /auth/register", "validação de dados", "hash de senha"]
+          implemented: false,
+          confidence: 0,
+          evidence: ""
         },
         {
           id: "AUTH-003",
           category: "security",
           description: "Implementar middleware de autenticação",
           priority: "medium",
-          criteria: ["middleware JWT", "proteção de rotas", "validação de token"]
+          implemented: false,
+          confidence: 0,
+          evidence: ""
         }
-      ]
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     const outputPath = path.resolve(options.output);
@@ -230,124 +239,6 @@ program
     console.log(chalk.green(`✅ Arquivo de regras criado: ${outputPath}`));
     console.log(chalk.blue('📝 Edite o arquivo com suas regras específicas'));
   });
-
-async function validateLocally(
-  apiKey: string, 
-  rules: any, 
-  options: any, 
-  spinner: ora.Ora,
-  config: CLIConfig
-) {
-  try {
-    spinner.text = 'Capturando mudanças do Git...';
-    
-    // Simular captura de mudanças do Git (versão simplificada)
-    const gitChanges = await getGitChanges(options.baseBranch || config.defaultBranch || 'main');
-    
-    if (gitChanges.length === 0) {
-      spinner.warn('Nenhuma mudança encontrada no Git');
-      return;
-    }
-
-    spinner.text = 'Obtendo branch atual...';
-    const currentBranch = await getCurrentBranch();
-
-    spinner.text = 'Executando validação com IA...';
-    
-    // Simular validação (versão simplificada)
-    const result = await simulateValidation(apiKey, rules, gitChanges, currentBranch);
-
-    // Criar diretório de relatórios
-    const reportsDir = path.resolve(options.output || config.outputDir || 'reports');
-    await fs.ensureDir(reportsDir);
-
-    // Gerar relatório
-    spinner.text = 'Gerando relatório...';
-    const report = generateReport(result, rules, currentBranch);
-    
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportFileName = `validation-${rules.taskId}-${timestamp}.json`;
-    const reportPath = path.join(reportsDir, reportFileName);
-
-    await fs.writeJson(reportPath, report, { spaces: 2 });
-
-    spinner.succeed('Validação concluída!');
-
-    // Exibir resumo
-    displaySummary(result, reportPath);
-
-  } catch (error) {
-    spinner.fail('Erro durante a validação local');
-    throw error;
-  }
-}
-
-async function getGitChanges(baseBranch: string): Promise<any[]> {
-  // Simulação - em uma implementação real, isso usaria simple-git
-  return [
-    {
-      filePath: 'src/auth/login.ts',
-      changeType: 'modified',
-      additions: 10,
-      deletions: 2,
-      content: '// Simulated content',
-      diff: '// Simulated diff'
-    }
-  ];
-}
-
-async function getCurrentBranch(): Promise<string> {
-  // Simulação - em uma implementação real, isso usaria simple-git
-  return 'feature/auth';
-}
-
-async function simulateValidation(apiKey: string, rules: any, gitChanges: any[], branchName: string): Promise<any> {
-  // Simulação da validação com IA
-  const implementedRules = rules.rules.filter((rule: any) => Math.random() > 0.5);
-  const missingRules = rules.rules.filter((rule: any) => !implementedRules.includes(rule));
-  
-  return {
-    taskId: rules.taskId,
-    branchName,
-    completenessScore: implementedRules.length / rules.rules.length,
-    implementedRules,
-    missingRules,
-    suggestions: ['Continue implementando as regras pendentes'],
-    timestamp: new Date(),
-    summary: {
-      totalRules: rules.rules.length,
-      implementedCount: implementedRules.length,
-      missingCount: missingRules.length,
-      highPriorityMissing: missingRules.filter((r: any) => r.priority === 'high').length
-    }
-  };
-}
-
-function generateReport(result: any, rules: any, branchName: string): any {
-  const percentage = `${(result.completenessScore * 100).toFixed(1)}%`;
-  
-  return {
-    taskId: result.taskId,
-    branchName,
-    timestamp: result.timestamp.toISOString(),
-    summary: {
-      totalRules: result.summary.totalRules,
-      implementedCount: result.summary.implementedCount,
-      missingCount: result.summary.missingCount,
-      highPriorityMissing: result.summary.highPriorityMissing,
-      completenessScore: result.completenessScore,
-      percentage
-    },
-    implementedRules: result.implementedRules,
-    missingRules: result.missingRules,
-    suggestions: result.suggestions,
-    analysis: {
-      strengths: result.implementedRules.length > 0 ? [`✅ ${result.implementedRules.length} regras implementadas`] : [],
-      weaknesses: result.missingRules.length > 0 ? [`❌ ${result.missingRules.length} regras pendentes`] : [],
-      nextSteps: ['Continue implementando as regras pendentes']
-    }
-  };
-}
 
 async function validateWithServer(serverUrl: string, rules: any, options: any) {
   const spinner = ora('Enviando validação para servidor remoto...').start();
@@ -362,27 +253,6 @@ async function validateWithServer(serverUrl: string, rules: any, options: any) {
     spinner.fail('Erro ao conectar com servidor remoto');
     throw error;
   }
-}
-
-function displaySummary(result: any, reportPath: string) {
-  console.log('\n' + chalk.bold.blue('📊 RESUMO DA VALIDAÇÃO'));
-  console.log(chalk.gray('─'.repeat(50)));
-  
-  console.log(chalk.white(`Score de Completude: ${chalk.bold.green(result.completenessScore * 100)}%`));
-  console.log(chalk.white(`Regras Implementadas: ${chalk.bold.green(result.implementedRules.length)}`));
-  console.log(chalk.white(`Regras Pendentes: ${chalk.bold.yellow(result.missingRules.length)}`));
-  
-  if (result.missingRules.length > 0) {
-    console.log('\n' + chalk.yellow('⚠️  REGRAS PENDENTES:'));
-    result.missingRules.forEach((rule: any) => {
-      console.log(chalk.yellow(`  • ${rule.description}`));
-    });
-  }
-
-  console.log('\n' + chalk.blue('📄 Relatório completo salvo em:'));
-  console.log(chalk.gray(reportPath));
-  
-  console.log('\n' + chalk.green('✅ Validação concluída com sucesso!'));
 }
 
 // Tratamento de erros não capturados

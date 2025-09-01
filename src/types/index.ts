@@ -1,5 +1,3 @@
-// src/types/index.ts
-
 export interface BusinessRule {
   id: string;
   description: string;
@@ -27,21 +25,12 @@ export interface ValidationResult {
   missingRules: BusinessRule[];
   suggestions: string[];
   timestamp: Date;
-  gitCommits: GitCommit[];
   summary: {
     totalRules: number;
     implementedCount: number;
     missingCount: number;
     highPriorityMissing: number;
   };
-}
-
-export interface GitCommit {
-  hash: string;
-  message: string;
-  author: string;
-  date: Date;
-  files: string[];
 }
 
 export interface TaskRules {
@@ -53,39 +42,11 @@ export interface TaskRules {
   updatedAt: Date;
 }
 
-export interface ValidationRequest {
-  taskId: string;
-  repositoryPath: string;
-  branchName: string;
-  baseBranch?: string;
-}
-
 export interface AgentContext {
   rules: TaskRules;
   gitChanges: GitChange[];
   repositoryPath: string;
   branchName: string;
-}
-
-export interface APIResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message: string;
-  timestamp: Date;
-  errors?: string[];
-}
-
-// Agent specific types
-export interface AgentConfig {
-  anthropicApiKey: string;
-  model: string;
-  temperature: number;
-  maxTokens: number;
-}
-
-export interface AgentPrompt {
-  system: string;
-  user: string;
 }
 
 export interface AgentResponse {

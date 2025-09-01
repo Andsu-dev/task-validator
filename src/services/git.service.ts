@@ -1,5 +1,5 @@
 // src/services/GitService.ts
-import simpleGit, { SimpleGit, DiffResult } from 'simple-git';
+import simpleGit, { SimpleGit } from 'simple-git';
 import { GitChange } from '@/types';
 import { logger } from '@/utils/logger';
 
@@ -14,11 +14,9 @@ export class GitService {
     try {
       logger.info(`Getting Git changes from ${baseBranch} to current branch`);
 
-      // Obter o branch atual
       const currentBranch = await this.git.branch();
       const currentBranchName = currentBranch.current;
 
-      // Se estamos no mesmo branch, comparar com o commit anterior
       let diffResult: string;
       if (baseBranch === currentBranchName) {
         diffResult = await this.git.diff([
@@ -26,14 +24,12 @@ export class GitService {
           '--name-status'
         ]);
       } else {
-        // Obter diff entre o branch atual e o base
         diffResult = await this.git.diff([
           `${baseBranch}...${currentBranchName}`,
           '--name-status'
         ]);
       }
 
-      // Parsear o resultado do diff
       const lines = diffResult.split('\n').filter(line => line.trim());
       
       if (lines.length === 0) {
@@ -47,10 +43,8 @@ export class GitService {
         const [status, filePath] = line.split('\t');
         if (!filePath) continue;
         try {
-          // Obter o conteúdo atual do arquivo
           const content = await this.git.show([`${currentBranchName}:${filePath}`]);
           
-          // Obter o diff detalhado do arquivo
           let fileDiff: string;
           if (baseBranch === currentBranchName) {
             fileDiff = await this.git.diff([
@@ -66,7 +60,6 @@ export class GitService {
             ]);
           }
 
-          // Contar adições e remoções
           const additions = (fileDiff.match(/^\+/gm) || []).length;
           const deletions = (fileDiff.match(/^-/gm) || []).length;
 
@@ -88,7 +81,7 @@ export class GitService {
       logger.info(`Found ${changes.length} changed files`);
       return changes;
     } catch (error) {
-      logger.error('Error getting Git changes:', error);
+      logger.error("Error getting Git changes:", error);
       throw error;
     }
   }
@@ -98,7 +91,7 @@ export class GitService {
       const branch = await this.git.branch();
       return branch.current;
     } catch (error) {
-      logger.error('Error getting current branch:', error);
+      logger.error("Error getting current branch:", error);
       throw error;
     }
   }
@@ -111,7 +104,7 @@ export class GitService {
       }
       return 'local';
     } catch (error) {
-      logger.error('Error getting repository path:', error);
+      logger.error("Error getting repository path:", error);
       return 'local';
     }
   }

@@ -1,12 +1,9 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-// src/agents/TaskValidatorAgent.ts
-import { 
+import type { 
   AgentContext, 
   ValidationResult, 
   BusinessRule, 
   AgentResponse,
-  GitChange,
-  TaskRules 
 } from '@/types';
 import { logger } from '@/utils/logger';
 
@@ -27,7 +24,6 @@ export class TaskValidatorAgent {
       logger.info(`Starting validation for task ${context.rules.taskId}`);
 
       const prompt = this.buildValidationPrompt(context);
-      console.log(prompt);
       const response = await this.model.invoke(prompt);
       const agentResponse = this.parseAgentResponse(response.content as string);
       const result = this.buildValidationResult(context, agentResponse);
@@ -56,8 +52,7 @@ Adições: ${change.additions} | Remoções: ${change.deletions}
 ${change.diff}
     `).join('\n');
 
-    console.log(rulesContext);
-    console.log(changesContext);
+
 
     return `
 Você é um especialista em análise de código e validação de implementações. 
@@ -101,7 +96,6 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
 
   private parseAgentResponse(content: string): AgentResponse {
     try {
-      // Remove possíveis caracteres extras e limpa o JSON
       const cleanedContent = content
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
@@ -111,7 +105,6 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
     } catch (error) {
       logger.error('Error parsing agent response', { content, error });
       
-      // Fallback response
       return {
         analysis: [],
         overallCompleteness: 0,
@@ -125,7 +118,6 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
     const implementedRules: BusinessRule[] = [];
     const missingRules: BusinessRule[] = [];
 
-    // Mapear resultados da análise para as regras
     context.rules.rules.forEach(rule => {
       const analysis = agentResponse.analysis.find(a => a.ruleId === rule.id);
       
@@ -143,7 +135,6 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
           missingRules.push(updatedRule);
         }
       } else {
-        // Regra não analisada - considerar como não implementada
         missingRules.push({
           ...rule,
           implemented: false,
@@ -161,7 +152,6 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
       missingRules,
       suggestions: agentResponse.generalSuggestions,
       timestamp: new Date(),
-      gitCommits: [], // Será preenchido pelo serviço Git
       summary: {
         totalRules: context.rules.rules.length,
         implementedCount: implementedRules.length,
@@ -169,20 +159,5 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
         highPriorityMissing: missingRules.filter(r => r.priority === 'high').length
       }
     };
-  }
-
-  // Método para análise em tempo real durante o desenvolvimento
-  async streamValidation(context: AgentContext, callback: (partial: Partial<ValidationResult>) => void): Promise<ValidationResult> {
-    callback({ 
-      taskId: context.rules.taskId, 
-      timestamp: new Date(),
-      completenessScore: 0 
-    });
-
-    // Análise por chunks para feedback em tempo real
-    const result = await this.validateTask(context);
-    
-    callback(result);
-    return result;
   }
 }

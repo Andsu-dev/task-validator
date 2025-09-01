@@ -1,8 +1,8 @@
 // src/routes/validation.ts
 import { Router, Request, Response } from 'express';
 import { TaskValidatorAgent } from '@/agents/TaskValidatorAgent';
-import { GitService } from '@/services/GitService';
-import { ValidationReportService } from '@/services/ValidationReportService';
+import { GitService } from '@/services/git.service';
+import { ValidationReportService } from '@/services/validation-report.service';
 import { logger } from '@/utils/logger';
 
 const router = Router();
@@ -19,7 +19,6 @@ router.post('/validate', async (req: Request, res: Response) => {
       });
     }
 
-    // Obter alterações do Git
     const gitService = new GitService(repositoryPath || process.cwd());
     const gitChanges = await gitService.getChanges(baseBranch);
     const branchName = await gitService.getCurrentBranch();
@@ -33,7 +32,6 @@ router.post('/validate', async (req: Request, res: Response) => {
       repositoryPath: repositoryPath || process.cwd()
     });
 
-    // Gerar e salvar relatório
     const reportService = new ValidationReportService();
     const report = await reportService.generateReport(result);
     const reportPath = await reportService.saveDetailedReport(result);
@@ -54,50 +52,6 @@ router.post('/validate', async (req: Request, res: Response) => {
       message: 'Error during validation',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
-  }
-});
-
-// POST /api/validation/stream
-router.post('/stream', async (req: Request, res: Response) => {
-  try {
-    const { rules, repositoryPath, baseBranch = 'main' } = req.body;
-
-    if (!process.env.GOOGLE_API_KEY) {
-      return res.status(500).json({
-        success: false,
-        message: 'GOOGLE_API_KEY not configured'
-      });
-    }
-
-    // Obter alterações do Git
-    const gitService = new GitService(repositoryPath || process.cwd());
-    const gitChanges = await gitService.getChanges(baseBranch);
-    const branchName = await gitService.getCurrentBranch();
-
-    const agent = new TaskValidatorAgent(process.env.GOOGLE_API_KEY);
-    
-    // Set headers for streaming
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
-    const result = await agent.streamValidation({
-      rules,
-      gitChanges,
-      branchName,
-      repositoryPath: repositoryPath || process.cwd()
-    }, (partial) => {
-      res.write(`data: ${JSON.stringify(partial)}\n\n`);
-    });
-
-    res.write(`data: ${JSON.stringify({ complete: true, result })}\n\n`);
-    res.end();
-  } catch (error) {
-    logger.error('Stream validation error', error);
-    res.write(`data: ${JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    })}\n\n`);
-    res.end();
   }
 });
 

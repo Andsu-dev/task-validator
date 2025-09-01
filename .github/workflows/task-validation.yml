@@ -1,0 +1,95 @@
+name: Task Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  validate-task:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Para ter acesso ao histórico completo do Git
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install Task Validator CLI
+      run: npm install -g task-validator-agent
+    
+    - name: Create task rules file
+      run: |
+        cat > task-rules.json << 'EOF'
+        {
+          "taskId": "PR-${{ github.event.number }}",
+          "title": "Pull Request Validation",
+          "description": "Validação automática das mudanças no PR",
+          "rules": [
+            {
+              "id": "CODE-001",
+              "category": "validation",
+              "description": "Código deve seguir padrões de qualidade",
+              "priority": "high",
+              "criteria": [
+                "funções bem documentadas",
+                "tratamento de erros",
+                "nomes descritivos"
+              ]
+            },
+            {
+              "id": "TEST-001",
+              "category": "validation",
+              "description": "Testes devem estar presentes",
+              "priority": "medium",
+              "criteria": [
+                "testes unitários",
+                "cobertura adequada",
+                "testes de integração"
+              ]
+            }
+          ]
+        }
+        EOF
+    
+    - name: Run task validation
+      run: |
+        task-validator validate \
+          --rules task-rules.json \
+          --base-branch ${{ github.base_ref }} \
+          --output validation-reports \
+          --api-key ${{ secrets.GOOGLE_AI_API_KEY }}
+      env:
+        GOOGLE_AI_API_KEY: ${{ secrets.GOOGLE_AI_API_KEY }}
+    
+    - name: Upload validation report
+      uses: actions/upload-artifact@v4
+      with:
+        name: validation-report
+        path: validation-reports/
+        retention-days: 30
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      run: |
+        if [ -f "validation-reports/validation-PR-${{ github.event.number }}-*.json" ]; then
+          REPORT_FILE=$(ls validation-reports/validation-PR-${{ github.event.number }}-*.json | head -1)
+          SCORE=$(jq -r '.summary.completenessScore' "$REPORT_FILE")
+          PERCENTAGE=$(jq -r '.summary.percentage' "$REPORT_FILE")
+          IMPLEMENTED=$(jq -r '.summary.implementedCount' "$REPORT_FILE")
+          TOTAL=$(jq -r '.summary.totalRules' "$REPORT_FILE")
+          
+          echo "## 🤖 Task Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Score de Completude:** $PERCENTAGE" >> $GITHUB_STEP_SUMMARY
+          echo "**Regras Implementadas:** $IMPLEMENTED/$TOTAL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 [Ver relatório completo](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        fi

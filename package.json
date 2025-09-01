@@ -4,7 +4,7 @@
   "description": "Agent para validação de tasks usando regras de negócio",
   "main": "dist/index.js",
   "bin": {
-    "task-validator": "dist/cli-simple.js"
+    "task-validator": "dist/cli.js"
   },
   "preferGlobal": true,
   "scripts": {

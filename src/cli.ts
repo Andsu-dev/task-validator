@@ -243,14 +243,28 @@ async function validateLocally(rules: any, options: any, config: any, spinner: o
     // Importar o agente e serviço Git
     const { TaskValidatorAgent } = await import('./agents/TaskValidatorAgent');
     const { GitService } = await import('./services/git.service');
+    const { AnalysisLogger } = await import('./utils/analysis-logger');
+    
+    const startTime = Date.now();
+    const logger = new AnalysisLogger();
     
     spinner.text = 'Analisando mudanças do Git...';
     
-    // Obter mudanças do Git
+    // Determinar caminhos relevantes baseado nas regras
+    const relevantPaths = extractRelevantPaths(rules);
+    console.log(chalk.blue(`🔍 Analisando apenas arquivos relevantes: ${relevantPaths.join(', ')}`));
+    
+    // Obter mudanças do Git (apenas arquivos relevantes)
     const gitService = new GitService(process.cwd());
     const currentBranch = await gitService.getCurrentBranch();
     const baseBranch = options.baseBranch || config.defaultBranch || 'main';
-    const gitChanges = await gitService.getChanges(baseBranch);
+    const gitChanges = await gitService.getChanges(baseBranch, relevantPaths);
+    
+    const gitAnalysisTime = Date.now() - startTime;
+    
+    // Log das mudanças Git
+    const gitLogPath = await logger.logGitChanges(gitChanges, baseBranch, currentBranch);
+    console.log(chalk.blue(`📝 Log Git salvo em: ${gitLogPath}`));
     
     spinner.text = 'Inicializando agente de IA...';
     
@@ -268,10 +282,13 @@ async function validateLocally(rules: any, options: any, config: any, spinner: o
     
     spinner.text = 'Executando análise com IA...';
     
+    const aiStartTime = Date.now();
+    
     // Executar validação com o agente
     const result = await agent.validateTask(context);
     
-    spinner.succeed('Validação com IA concluída!');
+    const aiAnalysisTime = Date.now() - aiStartTime;
+    const totalTime = Date.now() - startTime;
     
     // Exibir resultado
     console.log(chalk.bold.blue('\n📊 RESULTADO DA VALIDAÇÃO COM IA'));
@@ -348,11 +365,76 @@ async function validateLocally(rules: any, options: any, config: any, spinner: o
       }
     }
     
+    // Salvar log completo da análise
+    try {
+      const analysisLog = {
+        timestamp: new Date().toISOString(),
+        taskId: rules.taskId,
+        taskTitle: rules.title,
+        branchName: currentBranch,
+        baseBranch: baseBranch,
+        analysisDetails: {
+          rulesAnalyzed: rules.rules,
+          gitChanges: gitChanges,
+          agentPrompt: '', // Será preenchido pelo TaskValidatorAgent
+          agentResponse: '', // Será preenchido pelo TaskValidatorAgent
+          finalResult: result
+        },
+        performance: {
+          gitAnalysisTime,
+          aiAnalysisTime,
+          totalTime
+        }
+      };
+      
+      const analysisLogPath = await logger.logAnalysis(analysisLog);
+      console.log(chalk.blue(`📋 Log completo da análise salvo em: ${analysisLogPath}`));
+    } catch (error) {
+      console.warn(chalk.yellow('⚠️  Não foi possível salvar o log da análise:', error));
+    }
+    
+    spinner.succeed('Validação com IA concluída!');
+    
   } catch (error) {
     spinner.fail('Erro durante validação com IA');
     console.error(chalk.red('Detalhes do erro:'), error);
     throw error;
   }
+}
+
+// Função para extrair caminhos relevantes das regras
+function extractRelevantPaths(rules: any): string[] {
+  const relevantPaths: string[] = [];
+  
+  rules.rules.forEach((rule: any) => {
+    if (rule.criteria && Array.isArray(rule.criteria)) {
+      rule.criteria.forEach((criterion: string) => {
+        // Extrair caminhos de arquivos dos critérios
+        const fileMatch = criterion.match(/src\/[^\s]+/);
+        if (fileMatch) {
+          const path = fileMatch[0];
+          if (!relevantPaths.includes(path)) {
+            relevantPaths.push(path);
+          }
+        }
+      });
+    }
+  });
+  
+  // Se não encontrou caminhos específicos, usar padrões baseados na categoria
+  if (relevantPaths.length === 0) {
+    rules.rules.forEach((rule: any) => {
+      if (rule.category === 'controller') {
+        relevantPaths.push('src/api');
+      } else if (rule.category === 'routes') {
+        relevantPaths.push('src/api');
+      } else if (rule.category === 'api') {
+        relevantPaths.push('src/api');
+      }
+    });
+  }
+  
+  return relevantPaths;
 }
 
 async function validateWithServer(serverUrl: string, rules: any, options: any) {

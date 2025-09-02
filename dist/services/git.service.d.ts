@@ -2,7 +2,7 @@ import { GitChange } from '../types';
 export declare class GitService {
     private git;
     constructor(repositoryPath: string);
-    getChanges(baseBranch?: string): Promise<GitChange[]>;
+    getChanges(baseBranch?: string, relevantPaths?: string[]): Promise<GitChange[]>;
     getCurrentBranch(): Promise<string>;
     getRepositoryPath(): Promise<string>;
     private mapGitStatus;

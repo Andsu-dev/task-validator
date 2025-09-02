@@ -24,9 +24,24 @@ export class TaskValidatorAgent {
       logger.info(`Starting validation for task ${context.rules.taskId}`);
 
       const prompt = this.buildValidationPrompt(context);
+      
+      // Log do prompt enviado para a IA
+      logger.info(`Prompt sent to AI for task ${context.rules.taskId}`, {
+        promptLength: prompt.length,
+        rulesCount: context.rules.rules.length,
+        gitChangesCount: context.gitChanges.length
+      });
+      
       const response = await this.model.invoke(prompt);
       const agentResponse = this.parseAgentResponse(response.content as string);
       const result = this.buildValidationResult(context, agentResponse);
+      
+      // Log da resposta da IA
+      logger.info(`AI response received for task ${context.rules.taskId}`, {
+        responseLength: response.content?.length || 0,
+        analysisCount: agentResponse.analysis.length,
+        overallCompleteness: agentResponse.overallCompleteness
+      });
       
       logger.info(`Validation completed for task ${context.rules.taskId}`, {
         score: result.completenessScore,

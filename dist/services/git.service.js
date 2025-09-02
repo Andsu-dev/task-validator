@@ -12,7 +12,7 @@ class GitService {
     constructor(repositoryPath) {
         this.git = (0, simple_git_1.default)(repositoryPath);
     }
-    async getChanges(baseBranch = 'main') {
+    async getChanges(baseBranch = 'main', relevantPaths) {
         try {
             logger_1.logger.info(`Getting Git changes from ${baseBranch} to current branch`);
             const currentBranch = await this.git.branch();
@@ -40,6 +40,16 @@ class GitService {
                 const [status, filePath] = line.split('\t');
                 if (!filePath)
                     continue;
+                // Filtrar apenas arquivos relevantes se especificado
+                if (relevantPaths && relevantPaths.length > 0) {
+                    const isRelevant = relevantPaths.some(relevantPath => filePath.includes(relevantPath) ||
+                        filePath.startsWith(relevantPath) ||
+                        relevantPath.includes(filePath));
+                    if (!isRelevant) {
+                        logger_1.logger.info(`Skipping irrelevant file: ${filePath}`);
+                        continue;
+                    }
+                }
                 try {
                     const content = await this.git.show([`${currentBranchName}:${filePath}`]);
                     let fileDiff;
@@ -67,13 +77,13 @@ class GitService {
                         content,
                         diff: fileDiff
                     });
-                    logger_1.logger.info(`Processed file: ${filePath} (${status})`);
+                    logger_1.logger.info(`Processed relevant file: ${filePath} (${status})`);
                 }
                 catch (error) {
                     logger_1.logger.warn(`Error processing file ${filePath}:`, error);
                 }
             }
-            logger_1.logger.info(`Found ${changes.length} changed files`);
+            logger_1.logger.info(`Found ${changes.length} relevant changed files`);
             return changes;
         }
         catch (error) {

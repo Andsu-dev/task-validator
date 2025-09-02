@@ -152,7 +152,6 @@ program
 program
     .command('validate')
     .description('Validar uma task baseada nas mudanças do Git')
-    .option('-r, --rules <file>', 'Arquivo de regras JSON', 'task-rules.json')
     .option('-b, --base-branch <branch>', 'Branch base para comparação', 'main')
     .option('-o, --output <dir>', 'Diretório de saída para relatórios')
     .option('-k, --api-key <key>', 'Chave da API do Google AI')
@@ -169,7 +168,7 @@ program
         // Carregar configuração
         const config = await loadConfig();
         // Carregar regras da task
-        const rulesPath = path_1.default.resolve(options.rules || config.rulesFile || 'task-rules.json');
+        const rulesPath = path_1.default.resolve('task-rules.json');
         if (!fs_extra_1.default.existsSync(rulesPath)) {
             spinner.fail(`Erro: Arquivo de regras não encontrado: ${rulesPath}`);
             process.exit(1);
@@ -203,8 +202,7 @@ program
 program
     .command('init')
     .description('Criar arquivo de regras de exemplo')
-    .option('-o, --output <file>', 'Nome do arquivo de saída', 'task-rules.json')
-    .action(async (options) => {
+    .action(async () => {
     const exampleRules = {
         taskId: "TASK-001",
         title: "Implementar autenticação de usuários",
@@ -241,7 +239,7 @@ program
         createdAt: new Date(),
         updatedAt: new Date()
     };
-    const outputPath = path_1.default.resolve(options.output);
+    const outputPath = path_1.default.resolve('task-rules.json');
     await fs_extra_1.default.writeJson(outputPath, exampleRules, { spaces: 2 });
     console.log(chalk_1.default.green(`✅ Arquivo de regras criado: ${outputPath}`));
     console.log(chalk_1.default.blue('📝 Edite o arquivo com suas regras específicas'));
@@ -320,7 +318,10 @@ async function validateLocally(rules, options, config, spinner) {
         // Resumo da IA
         if (result.summary) {
             console.log(chalk_1.default.bold.blue('\n📋 RESUMO DA ANÁLISE:'));
-            console.log(chalk_1.default.white(result.summary));
+            console.log(chalk_1.default.white(`Total de regras: ${result.summary.totalRules}`));
+            console.log(chalk_1.default.white(`Implementadas: ${result.summary.implementedCount}`));
+            console.log(chalk_1.default.white(`Pendentes: ${result.summary.missingCount}`));
+            console.log(chalk_1.default.white(`Alta prioridade pendente: ${result.summary.highPriorityMissing}`));
         }
         // Salvar relatório se diretório de saída especificado
         const outputDir = options.output || config.outputDir || 'reports';

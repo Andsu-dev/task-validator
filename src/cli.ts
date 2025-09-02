@@ -135,7 +135,6 @@ program
 program
   .command('validate')
   .description('Validar uma task baseada nas mudanças do Git')
-  .option('-r, --rules <file>', 'Arquivo de regras JSON', 'task-rules.json')
   .option('-b, --base-branch <branch>', 'Branch base para comparação', 'main')
   .option('-o, --output <dir>', 'Diretório de saída para relatórios')
   .option('-k, --api-key <key>', 'Chave da API do Google AI')
@@ -155,7 +154,7 @@ program
       const config = await loadConfig();
 
       // Carregar regras da task
-      const rulesPath = path.resolve(options.rules || config.rulesFile || 'task-rules.json');
+      const rulesPath = path.resolve('task-rules.json');
       if (!fs.existsSync(rulesPath)) {
         spinner.fail(`Erro: Arquivo de regras não encontrado: ${rulesPath}`);
         process.exit(1);
@@ -194,8 +193,7 @@ program
 program
   .command('init')
   .description('Criar arquivo de regras de exemplo')
-  .option('-o, --output <file>', 'Nome do arquivo de saída', 'task-rules.json')
-  .action(async (options) => {
+  .action(async () => {
     const exampleRules = {
       taskId: "TASK-001",
       title: "Implementar autenticação de usuários",
@@ -233,7 +231,7 @@ program
       updatedAt: new Date()
     };
 
-    const outputPath = path.resolve(options.output);
+    const outputPath = path.resolve('task-rules.json');
     await fs.writeJson(outputPath, exampleRules, { spaces: 2 });
     
     console.log(chalk.green(`✅ Arquivo de regras criado: ${outputPath}`));
@@ -330,7 +328,10 @@ async function validateLocally(rules: any, options: any, config: any, spinner: o
     // Resumo da IA
     if (result.summary) {
       console.log(chalk.bold.blue('\n📋 RESUMO DA ANÁLISE:'));
-      console.log(chalk.white(result.summary));
+      console.log(chalk.white(`Total de regras: ${result.summary.totalRules}`));
+      console.log(chalk.white(`Implementadas: ${result.summary.implementedCount}`));
+      console.log(chalk.white(`Pendentes: ${result.summary.missingCount}`));
+      console.log(chalk.white(`Alta prioridade pendente: ${result.summary.highPriorityMissing}`));
     }
     
     // Salvar relatório se diretório de saída especificado

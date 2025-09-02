@@ -51,7 +51,7 @@ class TaskValidatorAgent {
     }
     buildValidationPrompt(context) {
         const rulesContext = context.rules.rules.map((rule, index) => {
-            let ruleText = `${index + 1}. [${rule.priority.toUpperCase()}] ${rule.category}: ${rule.description}`;
+            let ruleText = `ID: ${rule.id} | [${rule.priority.toUpperCase()}] ${rule.category}: ${rule.description}`;
             // Incluir critérios se existirem
             if (rule.criteria && Array.isArray(rule.criteria)) {
                 ruleText += '\n   Critérios:';
@@ -114,6 +114,8 @@ INSTRUÇÕES ESPECÍFICAS:
    - Se apenas uma das regras principais está implementada: score = 40-50%
    - Se nenhuma regra principal está implementada: score = 0-20%
    - Regras de teste e documentação não afetam o score principal (são pós-refatoração)
+
+⚠️ IMPORTANTE: Use EXATAMENTE os IDs das regras fornecidas (REFACTOR-001, REFACTOR-002, TEST-001, DOC-001) no campo "ruleId". NÃO use números sequenciais!
 
 RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
 {

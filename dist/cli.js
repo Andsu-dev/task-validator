@@ -199,6 +199,7 @@ program
         process.exit(1);
     }
 });
+// Comando para criar arquivo de regras de exemplo
 program
     .command('init')
     .description('Criar arquivo de regras de exemplo')
@@ -244,6 +245,105 @@ program
     console.log(chalk_1.default.green(`✅ Arquivo de regras criado: ${outputPath}`));
     console.log(chalk_1.default.blue('📝 Edite o arquivo com suas regras específicas'));
 });
+program
+    .command('clear')
+    .description('Limpar arquivos e pastas gerados (task-rules.json, reports/, logs/)')
+    .option('-f, --force', 'Forçar limpeza sem confirmação')
+    .action(async (options) => {
+    try {
+        await clearGeneratedFiles(options.force);
+    }
+    catch (error) {
+        console.error(chalk_1.default.red('Erro ao limpar arquivos:'), error);
+        process.exit(1);
+    }
+});
+async function clearGeneratedFiles(force = false) {
+    try {
+        const filesToRemove = [
+            'task-rules.json',
+            'reports/',
+            'logs/'
+        ];
+        if (!force) {
+            console.log(chalk_1.default.yellow('⚠️  Você está prestes a remover os seguintes arquivos e pastas:'));
+            filesToRemove.forEach(file => {
+                console.log(chalk_1.default.white(`   • ${file}`));
+            });
+            console.log(chalk_1.default.yellow('\n🔍 Verificando o que será removido...'));
+            // Verificar o que existe
+            for (const file of filesToRemove) {
+                if (await fs_extra_1.default.pathExists(file)) {
+                    if (file.endsWith('/')) {
+                        // É uma pasta
+                        const files = await fs_extra_1.default.readdir(file);
+                        console.log(chalk_1.default.blue(`   📁 ${file} (${files.length} arquivos)`));
+                    }
+                    else {
+                        // É um arquivo
+                        const stats = await fs_extra_1.default.stat(file);
+                        console.log(chalk_1.default.blue(`   📄 ${file} (${(stats.size / 1024).toFixed(2)} KB)`));
+                    }
+                }
+                else {
+                    console.log(chalk_1.default.gray(`   ❌ ${file} (não existe)`));
+                }
+            }
+            console.log(chalk_1.default.yellow('\n❓ Deseja continuar? (y/N)'));
+            // Aguardar resposta do usuário
+            const readline = require('readline');
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+            const answer = await new Promise((resolve) => {
+                rl.question('', (input) => {
+                    rl.close();
+                    resolve(input.toLowerCase());
+                });
+            });
+            if (answer !== 'y' && answer !== 'yes') {
+                console.log(chalk_1.default.blue('❌ Operação cancelada pelo usuário'));
+                return;
+            }
+        }
+        console.log(chalk_1.default.blue('🧹 Iniciando limpeza...'));
+        let removedCount = 0;
+        for (const file of filesToRemove) {
+            if (await fs_extra_1.default.pathExists(file)) {
+                try {
+                    if (file.endsWith('/')) {
+                        // É uma pasta
+                        await fs_extra_1.default.remove(file);
+                        console.log(chalk_1.default.green(`   ✅ Pasta removida: ${file}`));
+                    }
+                    else {
+                        // É um arquivo
+                        await fs_extra_1.default.remove(file);
+                        console.log(chalk_1.default.green(`   ✅ Arquivo removido: ${file}`));
+                    }
+                    removedCount++;
+                }
+                catch (error) {
+                    console.log(chalk_1.default.red(`   ❌ Erro ao remover ${file}:`, error));
+                }
+            }
+            else {
+                console.log(chalk_1.default.gray(`   ⏭️  ${file} não existe, pulando...`));
+            }
+        }
+        if (removedCount > 0) {
+            console.log(chalk_1.default.green(`\n🎉 Limpeza concluída! ${removedCount} item(s) removido(s)`));
+        }
+        else {
+            console.log(chalk_1.default.blue('\nℹ️  Nenhum arquivo foi removido'));
+        }
+    }
+    catch (error) {
+        console.error(chalk_1.default.red('Erro durante a limpeza:'), error);
+        throw error;
+    }
+}
 async function validateLocally(rules, options, config, spinner) {
     try {
         // Importar o agente e serviço Git

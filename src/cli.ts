@@ -190,6 +190,7 @@ program
     }
   });
 
+// Comando para criar arquivo de regras de exemplo
 program
   .command('init')
   .description('Criar arquivo de regras de exemplo')
@@ -237,6 +238,111 @@ program
     console.log(chalk.green(`✅ Arquivo de regras criado: ${outputPath}`));
     console.log(chalk.blue('📝 Edite o arquivo com suas regras específicas'));
   });
+
+program
+  .command('clear')
+  .description('Limpar arquivos e pastas gerados (task-rules.json, reports/, logs/)')
+  .option('-f, --force', 'Forçar limpeza sem confirmação')
+  .action(async (options) => {
+    try {
+      await clearGeneratedFiles(options.force);
+    } catch (error) {
+      console.error(chalk.red('Erro ao limpar arquivos:'), error);
+      process.exit(1);
+    }
+  });
+
+async function clearGeneratedFiles(force: boolean = false) {
+  try {
+    const filesToRemove = [
+      'task-rules.json',
+      'reports/',
+      'logs/'
+    ];
+
+    if (!force) {
+      console.log(chalk.yellow('⚠️  Você está prestes a remover os seguintes arquivos e pastas:'));
+      filesToRemove.forEach(file => {
+        console.log(chalk.white(`   • ${file}`));
+      });
+      
+      console.log(chalk.yellow('\n🔍 Verificando o que será removido...'));
+      
+      // Verificar o que existe
+      for (const file of filesToRemove) {
+        if (await fs.pathExists(file)) {
+          if (file.endsWith('/')) {
+            // É uma pasta
+            const files = await fs.readdir(file);
+            console.log(chalk.blue(`   📁 ${file} (${files.length} arquivos)`));
+          } else {
+            // É um arquivo
+            const stats = await fs.stat(file);
+            console.log(chalk.blue(`   📄 ${file} (${(stats.size / 1024).toFixed(2)} KB)`));
+          }
+        } else {
+          console.log(chalk.gray(`   ❌ ${file} (não existe)`));
+        }
+      }
+      
+      console.log(chalk.yellow('\n❓ Deseja continuar? (y/N)'));
+      
+      // Aguardar resposta do usuário
+      const readline = require('readline');
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+      
+      const answer = await new Promise<string>((resolve) => {
+        rl.question('', (input: string) => {
+          rl.close();
+          resolve(input.toLowerCase());
+        });
+      });
+      
+      if (answer !== 'y' && answer !== 'yes') {
+        console.log(chalk.blue('❌ Operação cancelada pelo usuário'));
+        return;
+      }
+    }
+
+    console.log(chalk.blue('🧹 Iniciando limpeza...'));
+    
+    let removedCount = 0;
+    
+    for (const file of filesToRemove) {
+      if (await fs.pathExists(file)) {
+        try {
+          if (file.endsWith('/')) {
+            // É uma pasta
+            await fs.remove(file);
+            console.log(chalk.green(`   ✅ Pasta removida: ${file}`));
+          } else {
+            // É um arquivo
+            await fs.remove(file);
+            console.log(chalk.green(`   ✅ Arquivo removido: ${file}`));
+          }
+          removedCount++;
+        } catch (error) {
+          console.log(chalk.red(`   ❌ Erro ao remover ${file}:`, error));
+        }
+      } else {
+        console.log(chalk.gray(`   ⏭️  ${file} não existe, pulando...`));
+      }
+    }
+    
+    if (removedCount > 0) {
+      console.log(chalk.green(`\n🎉 Limpeza concluída! ${removedCount} item(s) removido(s)`));
+    } else {
+      console.log(chalk.blue('\nℹ️  Nenhum arquivo foi removido'));
+    }
+    
+  } catch (error) {
+    console.error(chalk.red('Erro durante a limpeza:'), error);
+    throw error;
+  }
+}
 
 async function validateLocally(rules: any, options: any, config: any, spinner: ora.Ora) {
   try {

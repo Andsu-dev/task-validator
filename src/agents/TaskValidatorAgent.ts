@@ -1,8 +1,8 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import type { 
-  AgentContext, 
-  ValidationResult, 
-  BusinessRule, 
+import type {
+  AgentContext,
+  ValidationResult,
+  BusinessRule,
   AgentResponse,
 } from '../types';
 import { logger } from '../utils/logger';
@@ -24,25 +24,25 @@ export class TaskValidatorAgent {
       logger.info(`Starting validation for task ${context.rules.taskId}`);
 
       const prompt = this.buildValidationPrompt(context);
-      
+
       // Log do prompt enviado para a IA
       logger.info(`Prompt sent to AI for task ${context.rules.taskId}`, {
         promptLength: prompt.length,
         rulesCount: context.rules.rules.length,
         gitChangesCount: context.gitChanges.length
       });
-      
+
       const response = await this.model.invoke(prompt);
       const agentResponse = this.parseAgentResponse(response.content as string);
       const result = this.buildValidationResult(context, agentResponse);
-      
+
       // Log da resposta da IA
       logger.info(`AI response received for task ${context.rules.taskId}`, {
         responseLength: response.content?.length || 0,
         analysisCount: agentResponse.analysis.length,
         overallCompleteness: agentResponse.overallCompleteness
       });
-      
+
       logger.info(`Validation completed for task ${context.rules.taskId}`, {
         score: result.completenessScore,
         implemented: result.implementedRules.length,
@@ -59,7 +59,7 @@ export class TaskValidatorAgent {
   private buildValidationPrompt(context: AgentContext): string {
     const rulesContext = context.rules.rules.map((rule, index) => {
       let ruleText = `${index + 1}. [${rule.priority.toUpperCase()}] ${rule.category}: ${rule.description}`;
-      
+
       // Incluir critérios se existirem
       if (rule.criteria && Array.isArray(rule.criteria)) {
         ruleText += '\n   Critérios:';
@@ -67,7 +67,7 @@ export class TaskValidatorAgent {
           ruleText += `\n   - ${criterion}`;
         });
       }
-      
+
       return ruleText;
     }).join('\n\n');
 
@@ -94,27 +94,39 @@ ${rulesContext}
 MUDANÇAS NO CÓDIGO:
 ${changesContext}
 
-ANÁLISE DETALHADA:
-- Analise cada arquivo modificado para identificar refatorações
-- Procure por padrões de renomeação: linhas removidas (vermelho) e adicionadas (verde)
-- Para funções: procure por mudanças onde apenas o nome da função foi alterado
-- Para rotas: procure por mudanças onde apenas o handler foi atualizado
-- Se a lógica interna permaneceu a mesma, considere como IMPLEMENTADO
+ANÁLISE DETALHADA - COMO INTERPRETAR DIFS:
 
-INSTRUÇÕES:
-1. Para cada regra de negócio, determine se foi implementada baseada nas mudanças de código
-2. ATENÇÃO ESPECIAL para refatorações:
-   - Renomeação de funções: procure por mudanças onde o nome antigo foi removido e o novo foi adicionado
-   - Atualização de referências: procure por mudanças em arquivos de rota onde handlers foram atualizados
-   - Mudanças de controller: analise se a lógica interna foi preservada
-3. EXEMPLOS DE REFATORAÇÕES:
-   - Se uma função foi renomeada de "getUsersWithFilters" para "coordenadorLead", isso IMPLEMENTA a regra de renomeação
-   - Se um handler foi alterado de "lead.getUsersWithFilters" para "lead.coordenadorLead", isso IMPLEMENTA a regra de atualização de rota
-   - Se a lógica interna da função foi preservada (mesmos parâmetros, mesma implementação), isso IMPLEMENTA a regra de refatoração
-4. Forneça um nível de confiança de 0.0 a 1.0 para cada análise
-5. Identifique evidências específicas no código que comprovem a implementação
-6. Sugira o que ainda precisa ser feito para regras não implementadas
-7. Calcule um score geral de completude da task
+1. **RENOMEAÇÃO DE FUNÇÕES** (REFACTOR-001):
+   - Procure por linhas que começam com "-" (vermelho) contendo o nome antigo da função
+   - Procure por linhas que começam com "+" (verde) contendo o novo nome da função
+   - EXEMPLO ESPECÍFICO: Se você vê "-async getUsersWithFilters(ctx)" e "+async cordenadorLead(ctx)", isso é uma renomeação
+   - Se a lógica interna (parâmetros, implementação) permaneceu igual, considere IMPLEMENTADO
+
+2. **ATUALIZAÇÃO DE ROTAS** (REFACTOR-002):
+   - Procure por linhas que começam com "-" contendo o handler antigo
+   - Procure por linhas que começam com "+" contendo o novo handler
+   - EXEMPLO ESPECÍFICO: Se você vê "-handler: \"lead.getUsersWithFilters\"" e "+handler: \"lead.cordenadorLead\"", isso é uma atualização de rota
+   - Se apenas o handler mudou e o resto permaneceu igual, considere IMPLEMENTADO
+
+3. **ANÁLISE DE DIFS**:
+   - Linhas com "-" (vermelho) = código removido
+   - Linhas com "+" (verde) = código adicionado
+   - Linhas sem prefixo = código inalterado
+   - Para refatorações, você deve ver pares de linhas onde uma foi removida e outra similar foi adicionada
+
+INSTRUÇÕES ESPECÍFICAS:
+1. Para REFACTOR-001: Procure especificamente por "-async getUsersWithFilters" e "+async cordenadorLead" no arquivo lead.js
+2. Para REFACTOR-002: Procure especificamente por "-handler: \"lead.getUsersWithFilters\"" e "+handler: \"lead.cordenadorLead\"" no arquivo custom-routes.js
+3. Se encontrar esses pares de mudanças, marque como IMPLEMENTADO com confiança alta (0.9-1.0)
+4. Para regras de teste e documentação, considere como não implementadas (são validações pós-refatoração)
+5. Forneça um nível de confiança de 0.0 a 1.0 para cada análise
+6. Identifique evidências específicas no código que comprovem a implementação
+7. Sugira o que ainda precisa ser feito para regras não implementadas
+8. CALCULE O SCORE DE COMPLETUDE:
+   - Se REFACTOR-001 e REFACTOR-002 estão implementados: score = 80-90%
+   - Se apenas uma das regras principais está implementada: score = 40-50%
+   - Se nenhuma regra principal está implementada: score = 0-20%
+   - Regras de teste e documentação não afetam o score principal (são pós-refatoração)
 
 RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
 {
@@ -144,7 +156,7 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
       return JSON.parse(cleanedContent) as AgentResponse;
     } catch (error) {
       logger.error('Error parsing agent response', { content, error });
-      
+
       return {
         analysis: [],
         overallCompleteness: 0,
@@ -160,7 +172,7 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
 
     context.rules.rules.forEach(rule => {
       const analysis = agentResponse.analysis.find(a => a.ruleId === rule.id);
-      
+
       if (analysis) {
         const updatedRule: BusinessRule = {
           ...rule,

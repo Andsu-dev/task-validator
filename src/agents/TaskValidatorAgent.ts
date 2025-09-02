@@ -79,16 +79,27 @@ ${rulesContext}
 MUDANÇAS NO CÓDIGO:
 ${changesContext}
 
+ANÁLISE DETALHADA:
+- Analise cada arquivo modificado para identificar refatorações
+- Procure por padrões de renomeação: linhas removidas (vermelho) e adicionadas (verde)
+- Para funções: procure por mudanças onde apenas o nome da função foi alterado
+- Para rotas: procure por mudanças onde apenas o handler foi atualizado
+- Se a lógica interna permaneceu a mesma, considere como IMPLEMENTADO
+
 INSTRUÇÕES:
 1. Para cada regra de negócio, determine se foi implementada baseada nas mudanças de código
 2. ATENÇÃO ESPECIAL para refatorações:
    - Renomeação de funções: procure por mudanças onde o nome antigo foi removido e o novo foi adicionado
    - Atualização de referências: procure por mudanças em arquivos de rota onde handlers foram atualizados
    - Mudanças de controller: analise se a lógica interna foi preservada
-3. Forneça um nível de confiança de 0.0 a 1.0 para cada análise
-4. Identifique evidências específicas no código que comprovem a implementação
-5. Sugira o que ainda precisa ser feito para regras não implementadas
-6. Calcule um score geral de completude da task
+3. EXEMPLOS DE REFATORAÇÕES:
+   - Se uma função foi renomeada de "getUsersWithFilters" para "coordenadorLead", isso IMPLEMENTA a regra de renomeação
+   - Se um handler foi alterado de "lead.getUsersWithFilters" para "lead.coordenadorLead", isso IMPLEMENTA a regra de atualização de rota
+   - Se a lógica interna da função foi preservada (mesmos parâmetros, mesma implementação), isso IMPLEMENTA a regra de refatoração
+4. Forneça um nível de confiança de 0.0 a 1.0 para cada análise
+5. Identifique evidências específicas no código que comprovem a implementação
+6. Sugira o que ainda precisa ser feito para regras não implementadas
+7. Calcule um score geral de completude da task
 
 RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
 {

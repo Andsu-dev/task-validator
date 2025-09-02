@@ -3,6 +3,9 @@ export declare class GitService {
     private git;
     constructor(repositoryPath: string);
     getChanges(baseBranch?: string, relevantPaths?: string[]): Promise<GitChange[]>;
+    private getCommittedChanges;
+    private combineChanges;
+    private getLocalChanges;
     getCurrentBranch(): Promise<string>;
     getRepositoryPath(): Promise<string>;
     private mapGitStatus;

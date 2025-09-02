@@ -16,6 +16,7 @@ export interface GitChange {
   deletions: number;
   content: string;
   diff: string;
+  isLocal?: boolean;
 }
 
 export interface ValidationResult {

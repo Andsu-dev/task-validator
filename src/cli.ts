@@ -176,7 +176,7 @@ program
 
       // Modo servidor remoto
       if (options.server) {
-        await validateWithServer(options.server, rules, options);
+        await validateLocally(rules, options, config, spinner);
         return;
       }
 
@@ -265,9 +265,9 @@ async function clearGeneratedFiles(force: boolean = false) {
       filesToRemove.forEach(file => {
         console.log(chalk.white(`   • ${file}`));
       });
-      
+
       console.log(chalk.yellow('\n🔍 Verificando o que será removido...'));
-      
+
       // Verificar o que existe
       for (const file of filesToRemove) {
         if (await fs.pathExists(file)) {
@@ -284,23 +284,23 @@ async function clearGeneratedFiles(force: boolean = false) {
           console.log(chalk.gray(`   ❌ ${file} (não existe)`));
         }
       }
-      
+
       console.log(chalk.yellow('\n❓ Deseja continuar? (y/N)'));
-      
+
       // Aguardar resposta do usuário
       const readline = require('readline');
       const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout
       });
-      
+
       const answer = await new Promise<string>((resolve) => {
         rl.question('', (input: string) => {
           rl.close();
           resolve(input.toLowerCase());
         });
       });
-      
+
       if (answer !== 'y' && answer !== 'yes') {
         console.log(chalk.blue('❌ Operação cancelada pelo usuário'));
         return;
@@ -308,9 +308,9 @@ async function clearGeneratedFiles(force: boolean = false) {
     }
 
     console.log(chalk.blue('🧹 Iniciando limpeza...'));
-    
+
     let removedCount = 0;
-    
+
     for (const file of filesToRemove) {
       if (await fs.pathExists(file)) {
         try {
@@ -331,13 +331,13 @@ async function clearGeneratedFiles(force: boolean = false) {
         console.log(chalk.gray(`   ⏭️  ${file} não existe, pulando...`));
       }
     }
-    
+
     if (removedCount > 0) {
       console.log(chalk.green(`\n🎉 Limpeza concluída! ${removedCount} item(s) removido(s)`));
     } else {
       console.log(chalk.blue('\nℹ️  Nenhum arquivo foi removido'));
     }
-    
+
   } catch (error) {
     console.error(chalk.red('Erro durante a limpeza:'), error);
     throw error;
@@ -482,8 +482,8 @@ async function validateLocally(rules: any, options: any, config: any, spinner: o
         analysisDetails: {
           rulesAnalyzed: rules.rules,
           gitChanges: gitChanges,
-          agentPrompt: '', // Será preenchido pelo TaskValidatorAgent
-          agentResponse: '', // Será preenchido pelo TaskValidatorAgent
+          agentPrompt: '',
+          agentResponse: '',
           finalResult: result
         },
         performance: {
@@ -547,21 +547,6 @@ function extractRelevantPaths(rules: any): string[] {
   }
 
   return relevantPaths;
-}
-
-async function validateWithServer(serverUrl: string, rules: any, options: any) {
-  const spinner = ora('Enviando validação para servidor remoto...').start();
-
-  try {
-    // Implementar lógica para enviar para servidor remoto
-    // Por enquanto, apenas exibir que seria enviado
-    spinner.succeed('Modo servidor remoto (não implementado ainda)');
-    console.log(chalk.yellow('URL do servidor:', serverUrl));
-
-  } catch (error) {
-    spinner.fail('Erro ao conectar com servidor remoto');
-    throw error;
-  }
 }
 
 // Tratamento de erros não capturados

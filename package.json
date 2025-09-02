@@ -1,6 +1,6 @@
 {
   "name": "task-validator-agent",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Agent para validação de tasks usando regras de negócio",
   "main": "dist/index.js",
   "bin": {

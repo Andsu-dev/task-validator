@@ -42,9 +42,19 @@ export class TaskValidatorAgent {
   }
 
   private buildValidationPrompt(context: AgentContext): string {
-    const rulesContext = context.rules.rules.map((rule, index) => 
-      `${index + 1}. [${rule.priority.toUpperCase()}] ${rule.category}: ${rule.description}`
-    ).join('\n');
+    const rulesContext = context.rules.rules.map((rule, index) => {
+      let ruleText = `${index + 1}. [${rule.priority.toUpperCase()}] ${rule.category}: ${rule.description}`;
+      
+      // Incluir critérios se existirem
+      if (rule.criteria && Array.isArray(rule.criteria)) {
+        ruleText += '\n   Critérios:';
+        rule.criteria.forEach((criterion: string, critIndex: number) => {
+          ruleText += `\n   - ${criterion}`;
+        });
+      }
+      
+      return ruleText;
+    }).join('\n\n');
 
     const changesContext = context.gitChanges.map(change => `
 --- Arquivo: ${change.filePath} (${change.changeType}) ---
@@ -71,10 +81,14 @@ ${changesContext}
 
 INSTRUÇÕES:
 1. Para cada regra de negócio, determine se foi implementada baseada nas mudanças de código
-2. Forneça um nível de confiança de 0.0 a 1.0 para cada análise
-3. Identifique evidências específicas no código que comprovem a implementação
-4. Sugira o que ainda precisa ser feito para regras não implementadas
-5. Calcule um score geral de completude da task
+2. ATENÇÃO ESPECIAL para refatorações:
+   - Renomeação de funções: procure por mudanças onde o nome antigo foi removido e o novo foi adicionado
+   - Atualização de referências: procure por mudanças em arquivos de rota onde handlers foram atualizados
+   - Mudanças de controller: analise se a lógica interna foi preservada
+3. Forneça um nível de confiança de 0.0 a 1.0 para cada análise
+4. Identifique evidências específicas no código que comprovem a implementação
+5. Sugira o que ainda precisa ser feito para regras não implementadas
+6. Calcule um score geral de completude da task
 
 RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
 {

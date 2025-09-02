@@ -2,10 +2,11 @@ export interface BusinessRule {
   id: string;
   description: string;
   priority: 'high' | 'medium' | 'low';
-  category: 'validation' | 'business_logic' | 'ui' | 'database' | 'api' | 'security' | 'performance';
+  category: 'validation' | 'business_logic' | 'ui' | 'database' | 'api' | 'security' | 'performance' | 'controller' | 'routes';
   implemented: boolean;
   confidence: number;
   evidence?: string;
+  criteria?: string[];
 }
 
 export interface GitChange {

@@ -371,6 +371,11 @@ async function validateLocally(rules, options, config, spinner) {
             };
             const analysisLogPath = await logger.logAnalysis(analysisLog);
             console.log(chalk_1.default.blue(`📋 Log completo da análise salvo em: ${analysisLogPath}`));
+            // Verificar consistência do resultado
+            if (result.completenessScore > 0.8 && result.summary.implementedCount === 0) {
+                console.log(chalk_1.default.yellow('⚠️  ATENÇÃO: Score alto mas nenhuma regra implementada - possível inconsistência!'));
+                console.log(chalk_1.default.yellow('   Verifique os logs para mais detalhes.'));
+            }
         }
         catch (error) {
             console.warn(chalk_1.default.yellow('⚠️  Não foi possível salvar o log da análise:', error));

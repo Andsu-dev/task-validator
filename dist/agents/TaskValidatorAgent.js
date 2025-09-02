@@ -129,11 +129,24 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
     }
     parseAgentResponse(content) {
         try {
+            logger_1.logger.info('Raw AI response received:', { contentLength: content.length, content: content.substring(0, 500) });
             const cleanedContent = content
                 .replace(/```json\n?/g, '')
                 .replace(/```\n?/g, '')
                 .trim();
-            return JSON.parse(cleanedContent);
+            logger_1.logger.info('Cleaned AI response:', { cleanedContentLength: cleanedContent.length, cleanedContent: cleanedContent.substring(0, 500) });
+            const parsedResponse = JSON.parse(cleanedContent);
+            logger_1.logger.info('Parsed AI response:', {
+                analysisCount: parsedResponse.analysis?.length || 0,
+                overallCompleteness: parsedResponse.overallCompleteness,
+                hasSummary: !!parsedResponse.summary,
+                analysisDetails: parsedResponse.analysis?.map(a => ({
+                    ruleId: a.ruleId,
+                    implemented: a.implemented,
+                    confidence: a.confidence
+                }))
+            });
+            return parsedResponse;
         }
         catch (error) {
             logger_1.logger.error('Error parsing agent response', { content, error });
@@ -146,10 +159,24 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
         }
     }
     buildValidationResult(context, agentResponse) {
+        logger_1.logger.info('Building validation result:', {
+            rulesCount: context.rules.rules.length,
+            agentAnalysisCount: agentResponse.analysis?.length || 0,
+            overallCompleteness: agentResponse.overallCompleteness
+        });
         const implementedRules = [];
         const missingRules = [];
         context.rules.rules.forEach(rule => {
             const analysis = agentResponse.analysis.find(a => a.ruleId === rule.id);
+            logger_1.logger.info(`Processing rule ${rule.id}:`, {
+                ruleId: rule.id,
+                foundAnalysis: !!analysis,
+                analysisDetails: analysis ? {
+                    implemented: analysis.implemented,
+                    confidence: analysis.confidence,
+                    evidence: analysis.evidence
+                } : 'No analysis found'
+            });
             if (analysis) {
                 const updatedRule = {
                     ...rule,
@@ -159,9 +186,11 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
                 };
                 if (analysis.implemented) {
                     implementedRules.push(updatedRule);
+                    logger_1.logger.info(`Rule ${rule.id} marked as IMPLEMENTED`);
                 }
                 else {
                     missingRules.push(updatedRule);
+                    logger_1.logger.info(`Rule ${rule.id} marked as MISSING`);
                 }
             }
             else {
@@ -171,9 +200,10 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
                     confidence: 0,
                     evidence: 'Regra não foi analisada pelo agente'
                 });
+                logger_1.logger.info(`Rule ${rule.id} has NO ANALYSIS from agent`);
             }
         });
-        return {
+        const result = {
             taskId: context.rules.taskId,
             branchName: context.branchName,
             completenessScore: agentResponse.overallCompleteness,
@@ -188,6 +218,13 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
                 highPriorityMissing: missingRules.filter(r => r.priority === 'high').length
             }
         };
+        logger_1.logger.info('Final validation result:', {
+            implementedCount: result.summary.implementedCount,
+            missingCount: result.summary.missingCount,
+            completenessScore: result.completenessScore,
+            scoreConsistency: result.completenessScore > 0.8 && result.summary.implementedCount === 0 ? 'INCONSISTENT' : 'CONSISTENT'
+        });
+        return result;
     }
 }
 exports.TaskValidatorAgent = TaskValidatorAgent;

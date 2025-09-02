@@ -1,4 +1,4 @@
-import { GitChange } from '@/types';
+import { GitChange } from '../types';
 export declare class GitService {
     private git;
     constructor(repositoryPath: string);

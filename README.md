@@ -266,6 +266,68 @@ curl -X POST http://localhost:3001/api/validation/report \
   }'
 ```
 
+## 🔧 Troubleshooting
+
+### Problema: Comando não encontrado após instalação
+
+Se após instalar com `npm install -g task-validator-agent` você receber o erro:
+
+```bash
+zsh: command not found: task-validator
+```
+
+**Soluções:**
+
+1. **Reinstalar o pacote:**
+   ```bash
+   npm uninstall -g task-validator-agent
+   npm install -g task-validator-agent
+   ```
+
+2. **Verificar se o npm está configurado corretamente:**
+   ```bash
+   npm config get prefix
+   # Deve mostrar o diretório onde os binários globais são instalados
+   
+   echo $PATH
+   # Deve incluir o diretório de binários do npm
+   ```
+
+3. **Usar o script de instalação automático:**
+   ```bash
+   # No diretório do projeto
+   ./scripts/install.sh
+   ```
+
+4. **Verificar se o projeto foi compilado:**
+   ```bash
+   # No diretório do projeto
+   npm run build
+   chmod +x dist/cli.js
+   npm install -g .
+   ```
+
+### Problema: Erro de permissão
+
+Se receber erro de permissão ao instalar globalmente:
+
+```bash
+sudo npm install -g task-validator-agent
+```
+
+### Verificar instalação
+
+```bash
+# Verificar se o comando está disponível
+which task-validator
+
+# Verificar versão
+task-validator --version
+
+# Verificar ajuda
+task-validator --help
+```
+
 ## 📁 Estrutura do Projeto
 
 ```

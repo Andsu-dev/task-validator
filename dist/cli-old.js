@@ -1,38 +1,5 @@
 #!/usr/bin/env node
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -191,7 +158,7 @@ program
             await validateWithServer(options.server, rules, options);
             return;
         }
-        // Validação local com IA
+        // Validação local
         spinner.text = 'Executando validação local...';
         await validateLocally(rules, options, config, spinner);
     }
@@ -246,102 +213,6 @@ program
     console.log(chalk_1.default.green(`✅ Arquivo de regras criado: ${outputPath}`));
     console.log(chalk_1.default.blue('📝 Edite o arquivo com suas regras específicas'));
 });
-async function validateLocally(rules, options, config, spinner) {
-    try {
-        // Importar o agente e serviço Git
-        const { TaskValidatorAgent } = await Promise.resolve().then(() => __importStar(require('./agents/TaskValidatorAgent')));
-        const { GitService } = await Promise.resolve().then(() => __importStar(require('./services/git.service')));
-        spinner.text = 'Analisando mudanças do Git...';
-        // Obter mudanças do Git
-        const gitService = new GitService(process.cwd());
-        const currentBranch = await gitService.getCurrentBranch();
-        const baseBranch = options.baseBranch || config.defaultBranch || 'main';
-        const gitChanges = await gitService.getChanges(baseBranch);
-        spinner.text = 'Inicializando agente de IA...';
-        // Inicializar o agente de validação
-        const apiKey = options.apiKey || config.apiKey || process.env.GOOGLE_AI_API_KEY;
-        const agent = new TaskValidatorAgent(apiKey);
-        // Preparar contexto para o agente
-        const context = {
-            rules,
-            gitChanges,
-            repositoryPath: process.cwd(),
-            branchName: currentBranch
-        };
-        spinner.text = 'Executando análise com IA...';
-        // Executar validação com o agente
-        const result = await agent.validateTask(context);
-        spinner.succeed('Validação com IA concluída!');
-        // Exibir resultado
-        console.log(chalk_1.default.bold.blue('\n📊 RESULTADO DA VALIDAÇÃO COM IA'));
-        console.log(chalk_1.default.gray('─'.repeat(50)));
-        console.log(chalk_1.default.white(`Task: ${chalk_1.default.cyan(rules.title)}`));
-        console.log(chalk_1.default.white(`ID: ${chalk_1.default.cyan(rules.taskId)}`));
-        console.log(chalk_1.default.white(`Branch: ${chalk_1.default.cyan(currentBranch)}`));
-        console.log(chalk_1.default.white(`Base: ${chalk_1.default.cyan(baseBranch)}`));
-        console.log(chalk_1.default.gray('─'.repeat(50)));
-        // Estatísticas
-        console.log(chalk_1.default.white(`📈 Total de regras: ${chalk_1.default.cyan(result.summary.totalRules)}`));
-        console.log(chalk_1.default.white(`✅ Implementadas: ${chalk_1.default.green(result.summary.implementedCount)}`));
-        console.log(chalk_1.default.white(`❌ Pendentes: ${chalk_1.default.red(result.summary.missingCount)}`));
-        console.log(chalk_1.default.white(`🎯 Score de completude: ${chalk_1.default.yellow((result.completenessScore * 100).toFixed(1))}%`));
-        // Prioridades
-        if (result.summary.highPriorityMissing > 0) {
-            console.log(chalk_1.default.white(`🔥 Alta prioridade pendente: ${chalk_1.default.red(result.summary.highPriorityMissing)} regras`));
-        }
-        console.log(chalk_1.default.gray('─'.repeat(50)));
-        // Regras implementadas
-        if (result.implementedRules.length > 0) {
-            console.log(chalk_1.default.bold.green('\n✅ REGRAS IMPLEMENTADAS:'));
-            result.implementedRules.forEach((rule) => {
-                const confidenceColor = rule.confidence >= 0.8 ? chalk_1.default.green : rule.confidence >= 0.6 ? chalk_1.default.yellow : chalk_1.default.red;
-                console.log(chalk_1.default.green(`   • ${rule.id}: ${rule.description}`));
-                if (rule.evidence) {
-                    console.log(chalk_1.default.gray(`     📝 Evidência: ${rule.evidence}`));
-                }
-                console.log(confidenceColor(`     🎯 Confiança: ${(rule.confidence * 100).toFixed(0)}%`));
-            });
-        }
-        // Regras pendentes
-        if (result.missingRules.length > 0) {
-            console.log(chalk_1.default.bold.red('\n❌ REGRAS PENDENTES:'));
-            result.missingRules.forEach((rule) => {
-                const priorityColor = rule.priority === 'high' ? chalk_1.default.red : rule.priority === 'medium' ? chalk_1.default.yellow : chalk_1.default.blue;
-                console.log(priorityColor(`   • ${rule.id}: ${rule.description} (${rule.priority})`));
-            });
-        }
-        // Sugestões da IA
-        if (result.suggestions && result.suggestions.length > 0) {
-            console.log(chalk_1.default.bold.blue('\n💡 SUGESTÕES DA IA:'));
-            result.suggestions.forEach((suggestion) => {
-                console.log(chalk_1.default.cyan(`   • ${suggestion}`));
-            });
-        }
-        // Resumo da IA
-        if (result.summary) {
-            console.log(chalk_1.default.bold.blue('\n📋 RESUMO DA ANÁLISE:'));
-            console.log(chalk_1.default.white(result.summary));
-        }
-        // Salvar relatório se diretório de saída especificado
-        const outputDir = options.output || config.outputDir || 'reports';
-        if (outputDir) {
-            try {
-                await fs_extra_1.default.ensureDir(outputDir);
-                const reportPath = path_1.default.join(outputDir, `validation-report-${Date.now()}.json`);
-                await fs_extra_1.default.writeJson(reportPath, result, { spaces: 2 });
-                console.log(chalk_1.default.blue(`\n📄 Relatório salvo em: ${reportPath}`));
-            }
-            catch (error) {
-                console.warn(chalk_1.default.yellow('⚠️  Não foi possível salvar o relatório:', error));
-            }
-        }
-    }
-    catch (error) {
-        spinner.fail('Erro durante validação com IA');
-        console.error(chalk_1.default.red('Detalhes do erro:'), error);
-        throw error;
-    }
-}
 async function validateWithServer(serverUrl, rules, options) {
     const spinner = (0, ora_1.default)('Enviando validação para servidor remoto...').start();
     try {
@@ -365,4 +236,4 @@ process.on('uncaughtException', (error) => {
     process.exit(1);
 });
 program.parse();
-//# sourceMappingURL=cli.js.map
+//# sourceMappingURL=cli-old.js.map

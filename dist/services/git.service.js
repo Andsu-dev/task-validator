@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GitService = void 0;
 // src/services/GitService.ts
 const simple_git_1 = __importDefault(require("simple-git"));
-const logger_1 = require("@/utils/logger");
+const logger_1 = require("../utils/logger");
 class GitService {
     git;
     constructor(repositoryPath) {

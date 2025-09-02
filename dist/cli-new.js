@@ -249,8 +249,8 @@ program
 async function validateLocally(rules, options, config, spinner) {
     try {
         // Importar o agente e serviço Git
-        const { TaskValidatorAgent } = await Promise.resolve().then(() => __importStar(require('./agents/TaskValidatorAgent')));
-        const { GitService } = await Promise.resolve().then(() => __importStar(require('./services/git.service')));
+        const { TaskValidatorAgent } = await Promise.resolve().then(() => __importStar(require('../agents/TaskValidatorAgent')));
+        const { GitService } = await Promise.resolve().then(() => __importStar(require('../services/git.service')));
         spinner.text = 'Analisando mudanças do Git...';
         // Obter mudanças do Git
         const gitService = new GitService(process.cwd());
@@ -365,4 +365,4 @@ process.on('uncaughtException', (error) => {
     process.exit(1);
 });
 program.parse();
-//# sourceMappingURL=cli.js.map
+//# sourceMappingURL=cli-new.js.map

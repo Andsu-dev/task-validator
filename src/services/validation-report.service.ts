@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { ValidationResult } from '@/types';
-import { logger } from '@/utils/logger';
+import { ValidationResult } from '../types';
+import { logger } from '../utils/logger';
 
 export class ValidationReportService {
   private outputDir: string;

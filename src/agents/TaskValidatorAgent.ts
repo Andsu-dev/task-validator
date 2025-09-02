@@ -4,8 +4,8 @@ import type {
   ValidationResult, 
   BusinessRule, 
   AgentResponse,
-} from '@/types';
-import { logger } from '@/utils/logger';
+} from '../types';
+import { logger } from '../utils/logger';
 
 export class TaskValidatorAgent {
   private model: ChatGoogleGenerativeAI;

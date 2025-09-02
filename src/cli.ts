@@ -181,9 +181,9 @@ program
         return;
       }
 
-      spinner.fail('Validação local não implementada. Use o servidor API.');
-      console.log(chalk.yellow('💡 Execute o servidor com: npm start'));
-      console.log(chalk.yellow('💡 Use --server <url> para validação remota'));
+      // Validação local com IA
+      spinner.text = 'Executando validação local...';
+      await validateLocally(rules, options, config, spinner);
       
     } catch (error) {
       console.error(chalk.red('Erro durante a validação:'), error);
@@ -239,6 +239,120 @@ program
     console.log(chalk.green(`✅ Arquivo de regras criado: ${outputPath}`));
     console.log(chalk.blue('📝 Edite o arquivo com suas regras específicas'));
   });
+
+async function validateLocally(rules: any, options: any, config: any, spinner: ora.Ora) {
+  try {
+    // Importar o agente e serviço Git
+    const { TaskValidatorAgent } = await import('./agents/TaskValidatorAgent');
+    const { GitService } = await import('./services/git.service');
+    
+    spinner.text = 'Analisando mudanças do Git...';
+    
+    // Obter mudanças do Git
+    const gitService = new GitService(process.cwd());
+    const currentBranch = await gitService.getCurrentBranch();
+    const baseBranch = options.baseBranch || config.defaultBranch || 'main';
+    const gitChanges = await gitService.getChanges(baseBranch);
+    
+    spinner.text = 'Inicializando agente de IA...';
+    
+    // Inicializar o agente de validação
+    const apiKey = options.apiKey || config.apiKey || process.env.GOOGLE_AI_API_KEY;
+    const agent = new TaskValidatorAgent(apiKey);
+    
+    // Preparar contexto para o agente
+    const context = {
+      rules,
+      gitChanges,
+      repositoryPath: process.cwd(),
+      branchName: currentBranch
+    };
+    
+    spinner.text = 'Executando análise com IA...';
+    
+    // Executar validação com o agente
+    const result = await agent.validateTask(context);
+    
+    spinner.succeed('Validação com IA concluída!');
+    
+    // Exibir resultado
+    console.log(chalk.bold.blue('\n📊 RESULTADO DA VALIDAÇÃO COM IA'));
+    console.log(chalk.gray('─'.repeat(50)));
+    console.log(chalk.white(`Task: ${chalk.cyan(rules.title)}`));
+    console.log(chalk.white(`ID: ${chalk.cyan(rules.taskId)}`));
+    console.log(chalk.white(`Branch: ${chalk.cyan(currentBranch)}`));
+    console.log(chalk.white(`Base: ${chalk.cyan(baseBranch)}`));
+    console.log(chalk.gray('─'.repeat(50)));
+    
+    // Estatísticas
+    console.log(chalk.white(`📈 Total de regras: ${chalk.cyan(result.summary.totalRules)}`));
+    console.log(chalk.white(`✅ Implementadas: ${chalk.green(result.summary.implementedCount)}`));
+    console.log(chalk.white(`❌ Pendentes: ${chalk.red(result.summary.missingCount)}`));
+    console.log(chalk.white(`🎯 Score de completude: ${chalk.yellow((result.completenessScore * 100).toFixed(1))}%`));
+    
+    // Prioridades
+    if (result.summary.highPriorityMissing > 0) {
+      console.log(chalk.white(`🔥 Alta prioridade pendente: ${chalk.red(result.summary.highPriorityMissing)} regras`));
+    }
+    
+    console.log(chalk.gray('─'.repeat(50)));
+    
+    // Regras implementadas
+    if (result.implementedRules.length > 0) {
+      console.log(chalk.bold.green('\n✅ REGRAS IMPLEMENTADAS:'));
+      result.implementedRules.forEach((rule: any) => {
+        const confidenceColor = rule.confidence >= 0.8 ? chalk.green : rule.confidence >= 0.6 ? chalk.yellow : chalk.red;
+        console.log(chalk.green(`   • ${rule.id}: ${rule.description}`));
+        if (rule.evidence) {
+          console.log(chalk.gray(`     📝 Evidência: ${rule.evidence}`));
+        }
+        console.log(confidenceColor(`     🎯 Confiança: ${(rule.confidence * 100).toFixed(0)}%`));
+      });
+    }
+    
+    // Regras pendentes
+    if (result.missingRules.length > 0) {
+      console.log(chalk.bold.red('\n❌ REGRAS PENDENTES:'));
+      result.missingRules.forEach((rule: any) => {
+        const priorityColor = rule.priority === 'high' ? chalk.red : rule.priority === 'medium' ? chalk.yellow : chalk.blue;
+        console.log(priorityColor(`   • ${rule.id}: ${rule.description} (${rule.priority})`));
+      });
+    }
+    
+    // Sugestões da IA
+    if (result.suggestions && result.suggestions.length > 0) {
+      console.log(chalk.bold.blue('\n💡 SUGESTÕES DA IA:'));
+      result.suggestions.forEach((suggestion: string) => {
+        console.log(chalk.cyan(`   • ${suggestion}`));
+      });
+    }
+    
+    // Resumo da IA
+    if (result.summary) {
+      console.log(chalk.bold.blue('\n📋 RESUMO DA ANÁLISE:'));
+      console.log(chalk.white(result.summary));
+    }
+    
+    // Salvar relatório se diretório de saída especificado
+    const outputDir = options.output || config.outputDir || 'reports';
+    if (outputDir) {
+      try {
+        await fs.ensureDir(outputDir);
+        const reportPath = path.join(outputDir, `validation-report-${Date.now()}.json`);
+        
+        await fs.writeJson(reportPath, result, { spaces: 2 });
+        console.log(chalk.blue(`\n📄 Relatório salvo em: ${reportPath}`));
+      } catch (error) {
+        console.warn(chalk.yellow('⚠️  Não foi possível salvar o relatório:', error));
+      }
+    }
+    
+  } catch (error) {
+    spinner.fail('Erro durante validação com IA');
+    console.error(chalk.red('Detalhes do erro:'), error);
+    throw error;
+  }
+}
 
 async function validateWithServer(serverUrl: string, rules: any, options: any) {
   const spinner = ora('Enviando validação para servidor remoto...').start();

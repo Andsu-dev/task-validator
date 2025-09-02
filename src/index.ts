@@ -3,8 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import { errorHandler } from '@/middleware/errorHandler';
-import { validationRoutes } from '@/routes/validation';
+import { errorHandler } from './middleware/errorHandler';
+import { validationRoutes } from './routes/validation';
 import { logger } from './utils/logger';
 
 dotenv.config();

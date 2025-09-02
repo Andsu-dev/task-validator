@@ -1,7 +1,7 @@
 // src/services/GitService.ts
 import simpleGit, { SimpleGit } from 'simple-git';
-import { GitChange } from '@/types';
-import { logger } from '@/utils/logger';
+import { GitChange } from '../types';
+import { logger } from '../utils/logger';
 
 export class GitService {
   private git: SimpleGit;

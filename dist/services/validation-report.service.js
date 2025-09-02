@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ValidationReportService = void 0;
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const path_1 = __importDefault(require("path"));
-const logger_1 = require("@/utils/logger");
+const logger_1 = require("../utils/logger");
 class ValidationReportService {
     outputDir;
     constructor(outputDir = './reports') {

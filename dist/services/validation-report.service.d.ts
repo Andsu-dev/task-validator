@@ -1,4 +1,4 @@
-import { ValidationResult } from '@/types';
+import { ValidationResult } from '../types';
 export declare class ValidationReportService {
     private outputDir;
     constructor(outputDir?: string);

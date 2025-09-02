@@ -1,9 +1,9 @@
 // src/routes/validation.ts
 import { Router, Request, Response } from 'express';
-import { TaskValidatorAgent } from '@/agents/TaskValidatorAgent';
-import { GitService } from '@/services/git.service';
-import { ValidationReportService } from '@/services/validation-report.service';
-import { logger } from '@/utils/logger';
+import { TaskValidatorAgent } from '../agents/TaskValidatorAgent';
+import { GitService } from '../services/git.service';
+import { ValidationReportService } from '../services/validation-report.service';
+import { logger } from '../utils/logger';
 
 const router = Router();
 

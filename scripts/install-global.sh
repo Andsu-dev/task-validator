@@ -24,6 +24,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Corrigir permissões do arquivo CLI
+echo "🔒 Corrigindo permissões do CLI..."
+chmod +x dist/cli.js
+
+if [ $? -ne 0 ]; then
+    echo "❌ Erro ao corrigir permissões."
+    exit 1
+fi
+
 # Instalar globalmente
 echo "🌍 Instalando globalmente..."
 npm install -g .

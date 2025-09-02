@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskValidatorAgent = void 0;
 const google_genai_1 = require("@langchain/google-genai");
-const logger_1 = require("@/utils/logger");
+const logger_1 = require("../utils/logger");
 class TaskValidatorAgent {
     model;
     constructor(apiKey) {

@@ -16,14 +16,7 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"],
-      "@/types/*": ["src/types/*"],
-      "@/services/*": ["src/services/*"],
-      "@/agents/*": ["src/agents/*"],
-      "@/utils/*": ["src/utils/*"]
-    }
+    "baseUrl": "./"
   },
   "include": [
     "src/**/*"

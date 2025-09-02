@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.validationRoutes = void 0;
 // src/routes/validation.ts
 const express_1 = require("express");
-const TaskValidatorAgent_1 = require("@/agents/TaskValidatorAgent");
-const git_service_1 = require("@/services/git.service");
-const validation_report_service_1 = require("@/services/validation-report.service");
-const logger_1 = require("@/utils/logger");
+const TaskValidatorAgent_1 = require("../agents/TaskValidatorAgent");
+const git_service_1 = require("../services/git.service");
+const validation_report_service_1 = require("../services/validation-report.service");
+const logger_1 = require("../utils/logger");
 const router = (0, express_1.Router)();
 exports.validationRoutes = router;
 // POST /api/validation/validate

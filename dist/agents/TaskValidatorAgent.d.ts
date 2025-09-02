@@ -1,4 +1,4 @@
-import type { AgentContext, ValidationResult } from '@/types';
+import type { AgentContext, ValidationResult } from '../types';
 export declare class TaskValidatorAgent {
     private model;
     constructor(apiKey: string);

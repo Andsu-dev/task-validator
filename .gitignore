@@ -4,7 +4,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-dist/
+# dist/ - REMOVIDO: necessário para o CLI funcionar
 build/
 .env
 .env.*

@@ -67,3 +67,6 @@ coverage/
 # Arquivos de build antigos
 dist-old/
 build-old/
+
+# IMPORTANTE: Incluir a pasta dist/ para o CLI funcionar
+# A pasta dist/ contém os arquivos compilados necessários para o CLI

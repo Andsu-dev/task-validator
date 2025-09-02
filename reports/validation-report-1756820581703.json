@@ -1,0 +1,48 @@
+{
+  "taskId": "TASK-001",
+  "branchName": "main",
+  "completenessScore": 0,
+  "implementedRules": [],
+  "missingRules": [
+    {
+      "id": "AUTH-001",
+      "category": "api",
+      "description": "Implementar endpoint de login",
+      "priority": "high",
+      "implemented": false,
+      "confidence": 0,
+      "evidence": "Regra não foi analisada pelo agente"
+    },
+    {
+      "id": "AUTH-002",
+      "category": "api",
+      "description": "Implementar endpoint de registro",
+      "priority": "high",
+      "implemented": false,
+      "confidence": 0,
+      "evidence": "Regra não foi analisada pelo agente"
+    },
+    {
+      "id": "AUTH-003",
+      "category": "security",
+      "description": "Implementar middleware de autenticação",
+      "priority": "medium",
+      "implemented": false,
+      "confidence": 0,
+      "evidence": "Regra não foi analisada pelo agente"
+    }
+  ],
+  "suggestions": [
+    "Implementar os endpoints de login e registro.",
+    "Implementar o middleware de autenticação.",
+    "Adicionar testes unitários e de integração para os endpoints e o middleware.",
+    "Documentar os endpoints e o middleware."
+  ],
+  "timestamp": "2025-09-02T13:43:01.699Z",
+  "summary": {
+    "totalRules": 3,
+    "implementedCount": 0,
+    "missingCount": 3,
+    "highPriorityMissing": 2
+  }
+}

@@ -33,6 +33,13 @@ export class TaskValidatorAgent {
       });
 
       const response = await this.model.invoke(prompt);
+
+      // Log da resposta bruta da IA
+      logger.info('Raw AI response:', {
+        content: response.content,
+        contentLength: response.content?.length || 0
+      });
+
       const agentResponse = this.parseAgentResponse(response.content as string);
       const result = this.buildValidationResult(context, agentResponse);
 
@@ -148,14 +155,14 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
 
   private parseAgentResponse(content: string): AgentResponse {
     try {
-      logger.info('Raw AI response received:', { contentLength: content.length, content: content.substring(0, 500) });
+      logger.info('Raw AI response received:', { contentLength: content.length, content: content.substring(0, 1000) });
 
       const cleanedContent = content
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();
 
-      logger.info('Cleaned AI response:', { cleanedContentLength: cleanedContent.length, cleanedContent: cleanedContent.substring(0, 500) });
+      logger.info('Cleaned AI response:', { cleanedContentLength: cleanedContent.length, cleanedContent: cleanedContent.substring(0, 1000) });
 
       const parsedResponse = JSON.parse(cleanedContent) as AgentResponse;
 
@@ -166,9 +173,21 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
         analysisDetails: parsedResponse.analysis?.map(a => ({
           ruleId: a.ruleId,
           implemented: a.implemented,
-          confidence: a.confidence
+          confidence: a.confidence,
+          evidence: a.evidence?.substring(0, 100)
         }))
       });
+
+      // VALIDAÇÃO CRÍTICA: Verificar se a resposta tem o formato esperado
+      if (!parsedResponse.analysis || !Array.isArray(parsedResponse.analysis)) {
+        logger.error('Invalid AI response format: missing or invalid analysis array');
+        throw new Error('Resposta da IA não contém array de análise válido');
+      }
+
+      if (typeof parsedResponse.overallCompleteness !== 'number') {
+        logger.error('Invalid AI response format: missing or invalid overallCompleteness');
+        throw new Error('Resposta da IA não contém score de completude válido');
+      }
 
       return parsedResponse;
     } catch (error) {
@@ -202,8 +221,9 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
         analysisDetails: analysis ? {
           implemented: analysis.implemented,
           confidence: analysis.confidence,
-          evidence: analysis.evidence
-        } : 'No analysis found'
+          evidence: analysis.evidence?.substring(0, 200)
+        } : 'No analysis found',
+        availableAnalysisIds: agentResponse.analysis?.map(a => a.ruleId) || []
       });
 
       if (analysis) {

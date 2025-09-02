@@ -24,6 +24,11 @@ class TaskValidatorAgent {
                 gitChangesCount: context.gitChanges.length
             });
             const response = await this.model.invoke(prompt);
+            // Log da resposta bruta da IA
+            logger_1.logger.info('Raw AI response:', {
+                content: response.content,
+                contentLength: response.content?.length || 0
+            });
             const agentResponse = this.parseAgentResponse(response.content);
             const result = this.buildValidationResult(context, agentResponse);
             // Log da resposta da IA
@@ -129,12 +134,12 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
     }
     parseAgentResponse(content) {
         try {
-            logger_1.logger.info('Raw AI response received:', { contentLength: content.length, content: content.substring(0, 500) });
+            logger_1.logger.info('Raw AI response received:', { contentLength: content.length, content: content.substring(0, 1000) });
             const cleanedContent = content
                 .replace(/```json\n?/g, '')
                 .replace(/```\n?/g, '')
                 .trim();
-            logger_1.logger.info('Cleaned AI response:', { cleanedContentLength: cleanedContent.length, cleanedContent: cleanedContent.substring(0, 500) });
+            logger_1.logger.info('Cleaned AI response:', { cleanedContentLength: cleanedContent.length, cleanedContent: cleanedContent.substring(0, 1000) });
             const parsedResponse = JSON.parse(cleanedContent);
             logger_1.logger.info('Parsed AI response:', {
                 analysisCount: parsedResponse.analysis?.length || 0,
@@ -143,9 +148,19 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
                 analysisDetails: parsedResponse.analysis?.map(a => ({
                     ruleId: a.ruleId,
                     implemented: a.implemented,
-                    confidence: a.confidence
+                    confidence: a.confidence,
+                    evidence: a.evidence?.substring(0, 100)
                 }))
             });
+            // VALIDAÇÃO CRÍTICA: Verificar se a resposta tem o formato esperado
+            if (!parsedResponse.analysis || !Array.isArray(parsedResponse.analysis)) {
+                logger_1.logger.error('Invalid AI response format: missing or invalid analysis array');
+                throw new Error('Resposta da IA não contém array de análise válido');
+            }
+            if (typeof parsedResponse.overallCompleteness !== 'number') {
+                logger_1.logger.error('Invalid AI response format: missing or invalid overallCompleteness');
+                throw new Error('Resposta da IA não contém score de completude válido');
+            }
             return parsedResponse;
         }
         catch (error) {
@@ -174,8 +189,9 @@ RESPONDA APENAS COM JSON VÁLIDO NO FORMATO:
                 analysisDetails: analysis ? {
                     implemented: analysis.implemented,
                     confidence: analysis.confidence,
-                    evidence: analysis.evidence
-                } : 'No analysis found'
+                    evidence: analysis.evidence?.substring(0, 200)
+                } : 'No analysis found',
+                availableAnalysisIds: agentResponse.analysis?.map(a => a.ruleId) || []
             });
             if (analysis) {
                 const updatedRule = {
